@@ -6,6 +6,11 @@ __pycache__/
 # C extensions
 *.so
 
+# Medical content processing (temporary files)
+data/medical_content/processed/archived/
+data/medical_content/processed/validation_reports/
+*.log
+
 # Distribution / packaging
 .Python
 build/
