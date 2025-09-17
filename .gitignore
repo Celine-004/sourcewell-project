@@ -9,6 +9,7 @@ __pycache__/
 # Medical content processing (temporary files)
 data/medical_content/processed/archived/
 data/medical_content/processed/validation_reports/
+weaviate-data/
 *.log
 
 # Distribution / packaging
