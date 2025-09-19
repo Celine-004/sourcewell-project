@@ -1,32 +1,32 @@
 services:
   weaviate:
-    command:
-      - --host
-      - 0.0.0.0
-      - --port
-      - '8080'
-      - --scheme
-      - http
     image: semitechnologies/weaviate:1.24.1
+    restart: unless-stopped
     ports:
       - "8080:8080"
-    restart: on-failure:0
+      - "50051:50051"  # CRITICAL: gRPC port for Weaviate v4 client
     environment:
-      QUERY_DEFAULTS_LIMIT: 25
-      AUTHENTICATION_ANONYMOUS_ACCESS_ENABLED: 'true'
-      PERSISTENCE_DATA_PATH: '/var/lib/weaviate'
-      DEFAULT_VECTORIZER_MODULE: 'none' # We will use sentence-transformers from Python
-      ENABLE_MODULES: '' # No additional Weaviate modules needed for prototype
-      CLUSTER_HOSTNAME: 'node1'
+      QUERY_DEFAULTS_LIMIT: "25"
+      AUTHENTICATION_ANONYMOUS_ACCESS_ENABLED: "true"
+      ENABLE_MODULES: "text2vec-transformers"  # CRITICAL: This enables the module
+      DEFAULT_VECTORIZER_MODULE: "text2vec-transformers"
+      TRANSFORMERS_INFERENCE_API: "http://t2v-transformers:8080"
+      CLUSTER_HOSTNAME: "node1"
     volumes:
-      # This line maps a local folder on your D: drive to Weaviate's data storage
-      # IMPORTANT: Ensure D:\preventive_health_app\weaviate_data exists or Docker will create it
       - weaviate_data:/var/lib/weaviate
+    depends_on:
+      - t2v-transformers
+
+  t2v-transformers:
+    # Use this verified, working image tag
+    image: semitechnologies/transformers-inference:sentence-transformers-all-MiniLM-L6-v2
+    restart: unless-stopped
+    environment:
+      ENABLE_CUDA: "0"
+      DEFAULT_MODEL: "sentence-transformers/all-MiniLM-L6-v2"
+    expose:
+      - "8080"
 
 volumes:
   weaviate_data:
     driver: local
-    driver_opts:
-      type: none
-      o: bind
-      device: D:\preventive_health_app\weaviate_data
