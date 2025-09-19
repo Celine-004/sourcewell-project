@@ -52,7 +52,7 @@ class MedicalSearchEngine:
             self.client.is_ready()
             return True
         except Exception as e:
-            print(f"❌ Search engine connection failed: {e}")
+            print(f" Search engine connection failed: {e}")
             return False
     
     def get_knowledge_base_stats(self) -> Dict[str, int]:
@@ -182,13 +182,13 @@ def main():
             return
         
         stats = search_engine.get_knowledge_base_stats()
-        print("📊 Knowledge Base Statistics:")
+        print(" Knowledge Base Statistics:")
         for class_name, count in stats.items():
             print(f"   {class_name}: {count} documents")
         
         if len(sys.argv) > 1:
             query = " ".join(sys.argv[1:])
-            print(f"\n🔍 Searching for: '{query}'")
+            print(f"\n Searching for: '{query}'")
             results = search_engine.search_medical_content(query)
             
             if results:
