@@ -14,28 +14,26 @@ sys.path.insert(0, str(project_root))
 
 from knowledge_base.search_engine import MedicalSearchEngine
 
-def run_predefined_search_demo():
+def run_predefined_search_demo(search_engine):
     """Run predefined search queries relevant to SourceWell calculators."""
     
-    search_engine = MedicalSearchEngine()
-    
-    print("🔍 SourceWell Medical Knowledge Base Search Demonstration")
+    print("SourceWell Medical Knowledge Base Search Demonstration")
     print("=" * 65)
     
     if not search_engine.check_connection():
-        print("❌ Cannot connect to knowledge base.")
+        print(" Cannot connect to knowledge base.")
         print("   Ensure Weaviate is running: docker-compose up -d")
         return False
     
     stats = search_engine.get_knowledge_base_stats()
-    print("📊 Knowledge Base Statistics:")
+    print(" Knowledge Base Statistics:")
     total_docs = sum(stats.values())
     for class_name, count in stats.items():
         print(f"   {class_name}: {count} documents")
     print(f"   Total: {total_docs} documents")
     
     if total_docs == 0:
-        print("\n⚠️  Knowledge base is empty!")
+        print("\n  Knowledge base is empty!")
         print("   Run: python knowledge_base/content_ingester.py")
         return False
     
@@ -68,10 +66,11 @@ def run_predefined_search_demo():
     ]
     
     for i, test_query in enumerate(test_queries, 1):
-        print(f"\n🔎 Search {i}: {test_query['description']}")
+        print("-" * 50)
+        print(f"\n Search {i}: {test_query['description']}")
         print(f"   Query: '{test_query['query']}'")
         print(f"   Target: {test_query['content_type'] or 'All content types'}")
-        print("-" * 50)
+
         
         try:
             results = search_engine.search_medical_content(
@@ -111,22 +110,20 @@ def run_predefined_search_demo():
                 print("   No results found.")
                 
         except Exception as e:
-            print(f"   ❌ Search error: {e}")
+            print(f"    Search error: {e}")
     
     return True
 
-def run_calculator_specific_demo():
+def run_calculator_specific_demo(search_engine):
     """Demonstrate calculator-specific content filtering."""
     
-    search_engine = MedicalSearchEngine()
-    
-    print(f"\n🧮 Calculator-Specific Content Demonstration")
+    print(f"\n Calculator-Specific Content Demonstration")
     print("=" * 50)
     
     calculators = ["FINDRISC", "ModifiedFramingham", "ColorectalScreening"]
     
     for calculator in calculators:
-        print(f"\n🔍 Content supporting {calculator}:")
+        print(f"\n Content supporting {calculator}:")
         print("-" * 30)
         
         try:
@@ -146,20 +143,21 @@ def run_calculator_specific_demo():
                 print(f"   No content found supporting {calculator}")
                 
         except Exception as e:
-            print(f"   ❌ Error: {e}")
+            print(f"    Error: {e}")
 
 def main():
-    """Main demonstration function."""
+    """Main demonstration function with proper resource management."""
     
-    success = run_predefined_search_demo()
-    
-    if success:
-        run_calculator_specific_demo()
-        print("\n🎉 Search demonstration complete!")
-        print("   Knowledge base is ready for AI integration and risk calculator implementation.")
-    else:
-        print("\n⚠️  Search demonstration could not run.")
-        print("   Ensure Weaviate is running and content has been ingested.")
+    with MedicalSearchEngine() as search_engine:
+        success = run_predefined_search_demo(search_engine)
+        
+        if success:
+            run_calculator_specific_demo(search_engine)
+            print("\n Search demonstration complete!")
+            print("   Knowledge base is ready for AI integration and risk calculator implementation.")
+        else:
+            print("\n  Search demonstration could not run.")
+            print("   Ensure Weaviate is running and content has been ingested.")
 
 if __name__ == "__main__":
     main()
