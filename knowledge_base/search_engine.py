@@ -1,3 +1,29 @@
+"""
+Medical Knowledge Search Engine
+
+Provides semantic search capabilities for medical content with citation support
+and calculator-specific filtering for evidence-based health risk assessment.
+"""
+
+import weaviate
+import weaviate.classes as wvc
+from typing import Dict, List, Optional
+from dataclasses import dataclass, field  
+
+@dataclass
+class SearchResult:
+    """Structured search result with medical metadata."""
+    title: str
+    content: str
+    organization: Optional[str] = None
+    journal: Optional[str] = None
+    calculator_support: List[str] = field(default_factory=list)  # ✅ Now works correctly
+
+    citation: str = ""
+    evidence_grade: Optional[str] = None
+    publication_year: Optional[int] = None
+    url: Optional[str] = None
+
 class MedicalSearchEngine:
     """Professional medical content search with semantic capabilities."""
     
@@ -11,6 +37,14 @@ class MedicalSearchEngine:
             self.client.close()
         except Exception:
             pass
+    
+    def __enter__(self):
+        """Context manager entry."""
+        return self
+    
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        """Context manager exit - close connection."""
+        self.close()
     
     def check_connection(self) -> bool:
         """Verify Weaviate connectivity."""
@@ -44,7 +78,7 @@ class MedicalSearchEngine:
         limit: int = 5,
         search_method: str = "semantic"
     ) -> List[SearchResult]:
-        """Search medical content with multiple filtering options."""
+        """Search medical content with collection-specific property handling."""
         if not self.check_connection():
             return []
         
@@ -58,51 +92,69 @@ class MedicalSearchEngine:
         else:
             target_collections = ["MedicalGuideline", "ResearchAbstract"]
         
-        return_properties = [
-            "title", "content", "organization", "journal", "calculator_support",
-            "citation", "evidence_grade", "publication_year", "url", "medical_domain"
-        ]
-        
         all_results = []
         
         for collection_name in target_collections:
             try:
                 collection = self.client.collections.get(collection_name)
                 
+                # Collection-specific property lists (prevents schema errors)
+                if collection_name == "MedicalGuideline":
+                    return_properties = [
+                        "title", "content", "organization", "calculator_support",
+                        "citation", "evidence_grade", "publication_year", "url", 
+                        "medical_domain", "section", "page_reference"
+                    ]
+                else:  # ResearchAbstract
+                    return_properties = [
+                        "title", "content", "authors", "journal", "calculator_support",
+                        "citation", "evidence_level", "publication_year", "pmid", 
+                        "doi", "medical_domain", "study_type", "population_size"
+                    ]
+                
                 # Build filter if calculator specified
                 where_filter = None
                 if calculator_filter:
-                    where_filter = weaviate.classes.query.Filter.by_property("calculator_support").contains_any([calculator_filter])
+                    where_filter = wvc.query.Filter.by_property("calculator_support").contains_any([calculator_filter])
                 
-                # Execute search based on method
-                if search_method == "semantic" and query:
+                # Execute search based on method and query presence
+                if (not query or query.strip() == "") and where_filter is not None:
+                    # Filter-only retrieval for calculator-specific searches without text queries
+                    response = collection.query.fetch_objects(
+                        limit=limit,
+                        return_properties=return_properties,
+                        filters=where_filter
+                    )
+                elif search_method == "semantic" and query:
+                    # Semantic search with optional filtering
                     response = collection.query.near_text(
                         query=query,
                         limit=limit,
                         return_properties=return_properties,
-                        where=where_filter
+                        filters=where_filter
                     )
                 else:
+                    # BM25 keyword search with optional filtering
                     response = collection.query.bm25(
                         query=query if query else "*",
                         limit=limit,
                         return_properties=return_properties,
-                        where=where_filter
+                        filters=where_filter
                     )
                 
-                # Process results
+                # Process results with proper property handling
                 for obj in response.objects:
                     props = obj.properties
                     result = SearchResult(
                         title=props.get('title', 'Untitled'),
                         content=props.get('content', ''),
-                        organization=props.get('organization'),
-                        journal=props.get('journal'),
+                        organization=props.get('organization'),  # MedicalGuideline only
+                        journal=props.get('journal'),            # ResearchAbstract only
                         calculator_support=props.get('calculator_support', []),
                         citation=props.get('citation', 'Citation not available'),
-                        evidence_grade=props.get('evidence_grade'),
+                        evidence_grade=props.get('evidence_grade') or props.get('evidence_level'),
                         publication_year=props.get('publication_year'),
-                        url=props.get('url')
+                        url=props.get('url')  # MedicalGuideline only
                     )
                     all_results.append(result)
                 
@@ -110,3 +162,47 @@ class MedicalSearchEngine:
                 print(f"Error searching {collection_name}: {e}")
         
         return all_results[:limit]
+    
+    def search_by_calculator(self, calculator_name: str, limit: int = 10) -> List[SearchResult]:
+        """Search for content supporting a specific calculator."""
+        return self.search_medical_content(
+            query="",
+            calculator_filter=calculator_name,
+            limit=limit,
+            search_method="bm25"
+        )
+
+def main():
+    """Command-line interface for search testing."""
+    import sys
+    
+    with MedicalSearchEngine() as search_engine:
+        if not search_engine.check_connection():
+            print("Cannot connect to knowledge base. Ensure Weaviate is running.")
+            return
+        
+        stats = search_engine.get_knowledge_base_stats()
+        print("📊 Knowledge Base Statistics:")
+        for class_name, count in stats.items():
+            print(f"   {class_name}: {count} documents")
+        
+        if len(sys.argv) > 1:
+            query = " ".join(sys.argv[1:])
+            print(f"\n🔍 Searching for: '{query}'")
+            results = search_engine.search_medical_content(query)
+            
+            if results:
+                for i, result in enumerate(results, 1):
+                    print(f"\n{i}. {result.title}")
+                    if result.organization:
+                        print(f"   Organization: {result.organization}")
+                    elif result.journal:
+                        print(f"   Journal: {result.journal}")
+                    if result.calculator_support:
+                        print(f"   Calculators: {', '.join(result.calculator_support)}")
+                    print(f"   Citation: {result.citation[:100]}...")
+            else:
+                print("No results found.")
+
+if __name__ == "__main__":
+    main()
