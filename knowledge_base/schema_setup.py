@@ -30,7 +30,7 @@ class MedicalSchemaManager:
             self.client.is_ready()
             return True
         except Exception as e:
-            print(f"❌ Weaviate connection failed: {e}")
+            print(f" Weaviate connection failed: {e}")
             print(f"   Ensure Weaviate is running: docker ps")
             print(f"   Test connectivity: curl http://localhost:8080/v1/meta")
             return False
@@ -41,66 +41,48 @@ class MedicalSchemaManager:
             collections = self.client.collections.list_all()
             return {collection.name for collection in collections.values()}
         except Exception as e:
-            print(f"❌ Error retrieving collections: {e}")
+            print(f" Error retrieving collections: {e}")
             return set()
     
     def create_medical_guideline_collection(self):
         """Create MedicalGuideline collection with v4 syntax."""
         properties = [
-            wvc.Property(name="content", data_type=wvc.DataType.TEXT, description="Extracted medical content"),
-            wvc.Property(name="organization", data_type=wvc.DataType.TEXT, description="Publishing medical organization"),
-            wvc.Property(name="title", data_type=wvc.DataType.TEXT, description="Official guideline title"),
-            wvc.Property(name="publication_year", data_type=wvc.DataType.INT, description="Year of publication"),
-            wvc.Property(name="section", data_type=wvc.DataType.TEXT, description="Hierarchical section path"),
-            wvc.Property(name="evidence_grade", data_type=wvc.DataType.TEXT, description="Evidence quality grade"),
-            wvc.Property(name="url", data_type=wvc.DataType.TEXT, description="Source URL for verification"),
-            wvc.Property(name="calculator_support", data_type=wvc.DataType.TEXT_ARRAY, description="Supported risk calculators"),
-            wvc.Property(name="medical_domain", data_type=wvc.DataType.TEXT_ARRAY, description="Medical specialty domains"),
-            wvc.Property(name="page_reference", data_type=wvc.DataType.TEXT, description="Specific page or table reference"),
-            wvc.Property(name="accessed_date", data_type=wvc.DataType.TEXT, description="Date content was accessed"),
-            wvc.Property(name="review_status", data_type=wvc.DataType.TEXT, description="Quality review status"),
-            wvc.Property(name="pmid", data_type=wvc.DataType.TEXT, description="PubMed ID if applicable"),
-            wvc.Property(name="doi", data_type=wvc.DataType.TEXT, description="Digital Object Identifier"),
-            wvc.Property(name="citation", data_type=wvc.DataType.TEXT, description="Vancouver-style citation")
+            # ... keep all your existing properties exactly the same ...
+            wvc.Property(name="content_hash", data_type=wvc.DataType.TEXT, description="SHA256 of source file for idempotent upserts")
         ]
         
         self.client.collections.create(
             name="MedicalGuideline",
             description="Clinical guidelines from major medical organizations with complete citation metadata",
             properties=properties,
-            vectorizer_config=wvc.Configure.Vectorizer.text2vec_transformers()
+            vector_config=wvc.Configure.NamedVectors(  # ✅ Use available NamedVectors
+                default=wvc.Configure.VectorIndex(
+                    vectorizer=wvc.Configure.Vectorizer.text2vec_transformers()
+                )
+            )
         )
-    
+
     def create_research_abstract_collection(self):
         """Create ResearchAbstract collection with v4 syntax."""
         properties = [
-            wvc.Property(name="content", data_type=wvc.DataType.TEXT, description="Abstract content"),
-            wvc.Property(name="title", data_type=wvc.DataType.TEXT, description="Research paper title"),
-            wvc.Property(name="authors", data_type=wvc.DataType.TEXT_ARRAY, description="Author list"),
-            wvc.Property(name="journal", data_type=wvc.DataType.TEXT, description="Publishing journal"),
-            wvc.Property(name="publication_year", data_type=wvc.DataType.INT, description="Year of publication"),
-            wvc.Property(name="pmid", data_type=wvc.DataType.TEXT, description="PubMed ID"),
-            wvc.Property(name="doi", data_type=wvc.DataType.TEXT, description="Digital Object Identifier"),
-            wvc.Property(name="study_type", data_type=wvc.DataType.TEXT, description="Type of research study"),
-            wvc.Property(name="population_size", data_type=wvc.DataType.TEXT, description="Study population size"),
-            wvc.Property(name="calculator_support", data_type=wvc.DataType.TEXT_ARRAY, description="Supported risk calculators"),
-            wvc.Property(name="medical_domain", data_type=wvc.DataType.TEXT_ARRAY, description="Medical specialty domains"),
-            wvc.Property(name="evidence_level", data_type=wvc.DataType.TEXT, description="Research evidence level"),
-            wvc.Property(name="accessed_date", data_type=wvc.DataType.TEXT, description="Date content was accessed"),
-            wvc.Property(name="review_status", data_type=wvc.DataType.TEXT, description="Quality review status"),
-            wvc.Property(name="citation", data_type=wvc.DataType.TEXT, description="Vancouver-style citation")
+            # ... keep all your existing properties exactly the same ...
+            wvc.Property(name="content_hash", data_type=wvc.DataType.TEXT, description="SHA256 of source file for idempotent upserts")
         ]
         
         self.client.collections.create(
             name="ResearchAbstract",
             description="Peer-reviewed medical research abstracts with complete bibliographic metadata",
             properties=properties,
-            vectorizer_config=wvc.Configure.Vectorizer.text2vec_transformers()
+            vector_config=wvc.Configure.NamedVectors(
+                default=wvc.Configure.VectorIndex(
+                    vectorizer=wvc.Configure.Vectorizer.text2vec_transformers()
+                )
+            )
         )
     
     def setup_complete_schema(self) -> bool:
         """Create complete medical content schema with idempotent behavior."""
-        print("🏗️  Setting up SourceWell Medical Knowledge Base Schema (v4)")
+        print("  Setting up SourceWell Medical Knowledge Base Schema (v4)")
         print("=" * 60)
         
         if not self.check_weaviate_connection():
@@ -113,29 +95,29 @@ class MedicalSchemaManager:
         if "MedicalGuideline" not in existing_collections:
             try:
                 self.create_medical_guideline_collection()
-                print("✓ MedicalGuideline collection created successfully")
+                print(" MedicalGuideline collection created successfully")
             except Exception as e:
-                print(f"❌ Error creating MedicalGuideline collection: {e}")
+                print(f" Error creating MedicalGuideline collection: {e}")
                 success = False
         else:
-            print("✓ MedicalGuideline collection already exists")
+            print(" MedicalGuideline collection already exists")
         
         # Create ResearchAbstract collection
         if "ResearchAbstract" not in existing_collections:
             try:
                 self.create_research_abstract_collection()
-                print("✓ ResearchAbstract collection created successfully")
+                print(" ResearchAbstract collection created successfully")
             except Exception as e:
-                print(f"❌ Error creating ResearchAbstract collection: {e}")
+                print(f" Error creating ResearchAbstract collection: {e}")
                 success = False
         else:
-            print("✓ ResearchAbstract collection already exists")
+            print(" ResearchAbstract collection already exists")
         
         if success:
-            print("\n🎉 SourceWell Medical Knowledge Base schema setup complete!")
+            print("\n SourceWell Medical Knowledge Base schema setup complete!")
             print("   Ready for medical content ingestion and semantic search.")
         else:
-            print("\n❌ Schema setup encountered errors. Check Weaviate status.")
+            print("\n Schema setup encountered errors. Check Weaviate status.")
         
         return success
 
@@ -157,11 +139,11 @@ def main():
             manager.setup_complete_schema()
         elif command == "check":
             if manager.check_weaviate_connection():
-                print("✓ Weaviate connection successful")
+                print(" Weaviate connection successful")
             else:
-                print("❌ Weaviate connection failed")
+                print(" Weaviate connection failed")
         elif command == "reset":
-            print("⚠️  WARNING: This will delete all data!")
+            print("  WARNING: This will delete all data!")
             confirm = input("Type 'RESET' to confirm: ")
             if confirm == "RESET":
                 try:
@@ -169,10 +151,10 @@ def main():
                     for collection_name in ["MedicalGuideline", "ResearchAbstract"]:
                         if collection_name in existing:
                             manager.client.collections.delete(collection_name)
-                            print(f"✓ Deleted collection: {collection_name}")
-                    print("🔄 Schema reset complete.")
+                            print(f" Deleted collection: {collection_name}")
+                    print(" Schema reset complete.")
                 except Exception as e:
-                    print(f"❌ Error resetting schema: {e}")
+                    print(f" Error resetting schema: {e}")
             else:
                 print("Reset cancelled.")
         else:
