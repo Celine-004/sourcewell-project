@@ -26,7 +26,23 @@ class TestMedicalKnowledgeBase(unittest.TestCase):
         cls.schema_manager = MedicalSchemaManager()
         cls.content_ingester = MedicalContentIngester()
         cls.search_engine = MedicalSearchEngine()
-    
+
+    @classmethod
+    def tearDownClass(cls):
+        """Clean up test resources."""
+        try:
+            cls.schema_manager.client.close()
+        except Exception:
+            pass
+        try:
+            cls.content_ingester.close()
+        except Exception:
+            pass
+        try:
+            cls.search_engine.close()
+        except Exception:
+            pass
+        
     def test_weaviate_connectivity(self):
         """Test Weaviate server connectivity."""
         self.assertTrue(
@@ -39,9 +55,9 @@ class TestMedicalKnowledgeBase(unittest.TestCase):
         success = self.schema_manager.setup_complete_schema()
         self.assertTrue(success, "Schema creation failed")
         
-        existing_classes = self.schema_manager.get_existing_classes()
-        self.assertIn("MedicalGuideline", existing_classes)
-        self.assertIn("ResearchAbstract", existing_classes)
+        existing_collections = self.schema_manager.get_existing_collections()
+        self.assertIn("MedicalGuideline", existing_collections)
+        self.assertIn("ResearchAbstract", existing_collections)
     
     def test_knowledge_base_statistics(self):
         """Test knowledge base content statistics."""
@@ -52,9 +68,9 @@ class TestMedicalKnowledgeBase(unittest.TestCase):
         
         total_content = sum(stats.values())
         if total_content > 0:
-            print(f"✓ Knowledge base contains {total_content} documents")
+            print(f" Knowledge base contains {total_content} documents")
         else:
-            print("⚠️  Knowledge base is empty. Run content ingestion first.")
+            print("  Knowledge base is empty. Run content ingestion first.")
     
     def test_search_functionality(self):
         """Test basic search functionality."""
@@ -70,7 +86,7 @@ class TestMedicalKnowledgeBase(unittest.TestCase):
                 self.assertIsNotNone(result.content)
                 self.assertIsNotNone(result.citation)
         else:
-            print("⚠️  No search results found. Ensure content ingestion completed.")
+            print("  No search results found. Ensure content ingestion completed.")
     
     def test_calculator_specific_search(self):
         """Test calculator-specific content filtering."""
@@ -80,7 +96,7 @@ class TestMedicalKnowledgeBase(unittest.TestCase):
             for result in findrisc_results:
                 self.assertIn("FINDRISC", result.calculator_support)
         else:
-            print("⚠️  No FINDRISC content found. Check content curation.")
+            print("  No FINDRISC content found. Check content curation.")
     
     def test_citation_integrity(self):
         """Test citation generation and integrity."""
@@ -98,7 +114,7 @@ class TestMedicalKnowledgeBase(unittest.TestCase):
 
 def run_comprehensive_tests():
     """Run all knowledge base tests with detailed output."""
-    print("🧪 SourceWell Knowledge Base Comprehensive Testing")
+    print(" SourceWell Knowledge Base Comprehensive Testing")
     print("=" * 60)
     
     suite = unittest.TestSuite()
@@ -107,25 +123,25 @@ def run_comprehensive_tests():
     runner = unittest.TextTestRunner(verbosity=2, buffer=True)
     result = runner.run(suite)
     
-    print(f"\n📊 Test Summary:")
+    print(f"\n Test Summary:")
     print(f"   Tests run: {result.testsRun}")
     print(f"   Failures: {len(result.failures)}")
     print(f"   Errors: {len(result.errors)}")
     
     if result.failures:
-        print(f"\n❌ Test Failures:")
+        print(f"\n Test Failures:")
         for test, traceback in result.failures:
             print(f"   {test}: {traceback}")
     
     if result.errors:
-        print(f"\n❌ Test Errors:")
+        print(f"\n Test Errors:")
         for test, traceback in result.errors:
             print(f"   {test}: {traceback}")
     
     if result.wasSuccessful():
-        print(f"\n🎉 All tests passed! Knowledge base is ready for production use.")
+        print(f"\n All tests passed! Knowledge base is ready for production use.")
     else:
-        print(f"\n⚠️  Some tests failed. Review issues before proceeding.")
+        print(f"\n  Some tests failed. Review issues before proceeding.")
     
     return result.wasSuccessful()
 
