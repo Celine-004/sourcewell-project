@@ -7,18 +7,17 @@ content into Weaviate knowledge base with complete audit trail.
 """
 
 import os
-import weaviate.classes as wvc
 import yaml
-import shutil
 import json
+import shutil
 import hashlib
+import weaviate
 from pathlib import Path
 from datetime import datetime
+import weaviate.classes as wvc
 from typing import Dict, List, Optional, Tuple
-import weaviate
 
 class MedicalContentIngester:
-    """Professional medical content ingestion with citation verification."""
     
     def __init__(self):
         """Initialize content ingester with paths and Weaviate v4 connection."""
@@ -54,7 +53,6 @@ class MedicalContentIngester:
             return {}
     
     def save_ingestion_state(self, state: Dict) -> None:
-        """Save current ingestion state for future runs."""
         try:
             with open(self.state_file, 'w', encoding='utf-8') as f:
                 json.dump(state, f, indent=2)
@@ -70,7 +68,6 @@ class MedicalContentIngester:
             return ""
     
     def generate_vancouver_citation(self, metadata: Dict) -> str:
-        """Generate Vancouver-style citation from metadata."""
         content_type = metadata.get('content_type', '')
         
         if content_type == 'MedicalGuideline':
@@ -123,7 +120,6 @@ class MedicalContentIngester:
         return "Citation format not supported for this content type."
     
     def parse_markdown_file(self, filepath: Path) -> Optional[Dict]:
-        """Extract and validate YAML frontmatter and content from markdown file."""
         try:
             with open(filepath, 'r', encoding='utf-8') as f:
                 content = f.read()
@@ -154,7 +150,6 @@ class MedicalContentIngester:
             return None
     
     def validate_metadata(self, metadata: Dict, filepath: Path) -> Tuple[bool, List[str]]:
-        """Validate required metadata fields and content quality."""
         errors = []
         
         content_type = metadata.get('content_type')
@@ -187,7 +182,6 @@ class MedicalContentIngester:
         return len(errors) == 0, errors
     
     def normalize_metadata(self, metadata: Dict) -> Dict:
-        """Normalize metadata for consistent Weaviate ingestion."""
         normalized = metadata.copy()
         
         list_fields = ['authors', 'calculator_support', 'medical_domain']
@@ -217,7 +211,6 @@ class MedicalContentIngester:
         return normalized
     
     def ingest_single_file(self, filepath: Path, state: Dict) -> bool:
-        """Ingest a single markdown file with comprehensive error handling and database-level deduplication."""
         file_key = str(filepath)
         
         try:
@@ -310,27 +303,26 @@ class MedicalContentIngester:
             print(f"    Unexpected error: {e}")
             return False
 
-        def log_error(self, filepath: Path, error_msg: str) -> None:
-            """Log detailed error information for debugging."""
-            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-            error_file = self.validation_reports_dir / f"error_{filepath.stem}_{timestamp}.log"
-            
-            try:
-                with open(error_file, 'w', encoding='utf-8') as f:
-                    f.write(f"SourceWell Medical Content Ingestion Error Report\n")
-                    f.write(f"=" * 50 + "\n")
-                    f.write(f"File: {filepath}\n")
-                    f.write(f"Timestamp: {datetime.now().isoformat()}\n")
-                    f.write(f"Error: {error_msg}\n")
-                    f.write(f"\nFile exists: {filepath.exists()}\n")
-                    if filepath.exists():
-                        f.write(f"File size: {filepath.stat().st_size} bytes\n")
-            except Exception as e:
-                print(f"Warning: Could not write error log: {e}")
+    def log_error(self, filepath: Path, error_msg: str) -> None:
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        error_file = self.validation_reports_dir / f"error_{filepath.stem}_{timestamp}.log"
+        
+        try:
+            with open(error_file, 'w', encoding='utf-8') as f:
+                f.write(f"Medical Content Ingestion Error Report\n")
+                f.write(f"=" * 50 + "\n")
+                f.write(f"File: {filepath}\n")
+                f.write(f"Timestamp: {datetime.now().isoformat()}\n")
+                f.write(f"Error: {error_msg}\n")
+                f.write(f"\nFile exists: {filepath.exists()}\n")
+                if filepath.exists():
+                    f.write(f"File size: {filepath.stat().st_size} bytes\n")
+        except Exception as e:
+            print(f"Warning: Could not write error log: {e}")
         
     def ingest_all_approved_content(self) -> Dict:
         """Ingest all approved medical content with comprehensive reporting."""
-        print("SourceWell Medical Content Ingestion")
+        print("Medical Content Ingestion")
         print("=" * 50)
         
         state = self.load_ingestion_state()
@@ -347,7 +339,7 @@ class MedicalContentIngester:
                 continue
             
             dir_name = content_dir.name
-            print(f"\\ Processing {dir_name} /")
+            print(f"\n\\ Processing {dir_name} /")
             
             md_files = list(content_dir.glob("*.md"))
             template_files = [f for f in md_files if f.name.startswith('_TEMPLATE_')]
@@ -375,7 +367,7 @@ class MedicalContentIngester:
         
         self.save_ingestion_state(state)
         
-        print(f"\nSourceWell Ingestion Summary")
+        print(f"\nIngestion Summary")
         print("=" * 40)
         print(f"   Files processed: {stats['total_processed']}")
         print(f"   Successfully ingested: {stats['successfully_ingested']}")
