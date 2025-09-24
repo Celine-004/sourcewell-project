@@ -5,8 +5,11 @@ Processes curated medical content from markdown files with YAML frontmatter,
 validates metadata, generates Vancouver-style citations, and ingests approved
 content into Weaviate knowledge base with complete audit trail.
 """
+import warnings
+warnings.filterwarnings("ignore", category=RuntimeWarning, module="<frozen runpy>")
 
 import os
+import sys
 import yaml
 import json
 import shutil
@@ -16,12 +19,13 @@ from pathlib import Path
 from datetime import datetime
 import weaviate.classes as wvc
 from typing import Dict, List, Optional, Tuple
+from .config import WEAVIATE_HTTP_PORT, WEAVIATE_GRPC_PORT
 
 class MedicalContentIngester:
     
     def __init__(self):
         """Initialize content ingester with paths and Weaviate v4 connection."""
-        self.client = weaviate.connect_to_local(port=8080, grpc_port=50051)
+        self.client = weaviate.connect_to_local(port=WEAVIATE_HTTP_PORT, grpc_port=WEAVIATE_GRPC_PORT)
         self.root_path = Path(__file__).resolve().parents[1]
         self.medical_content_base = self.root_path / "data" / "medical_content"
         self.guidelines_dir = self.medical_content_base / "guidelines"

@@ -5,10 +5,14 @@ Provides semantic search capabilities for medical content with citation support
 and calculator-specific filtering for evidence-based health risk assessment.
 """
 
+import os
+import sys
 import weaviate
+from pathlib import Path
 import weaviate.classes as wvc
 from typing import Dict, List, Optional
-from dataclasses import dataclass, field  
+from dataclasses import dataclass, field 
+from .config import WEAVIATE_HTTP_PORT, WEAVIATE_GRPC_PORT 
 
 @dataclass
 class SearchResult:
@@ -17,7 +21,7 @@ class SearchResult:
     content: str
     organization: Optional[str] = None
     journal: Optional[str] = None
-    calculator_support: List[str] = field(default_factory=list)  # ✅ Now works correctly
+    calculator_support: List[str] = field(default_factory=list) 
 
     citation: str = ""
     evidence_grade: Optional[str] = None
@@ -25,11 +29,11 @@ class SearchResult:
     url: Optional[str] = None
 
 class MedicalSearchEngine:
-    """Professional medical content search with semantic capabilities."""
+    """Medical content search with semantic capabilities."""
     
     def __init__(self):
         """Initialize search engine with Weaviate v4 connection."""
-        self.client = weaviate.connect_to_local(port=8080, grpc_port=50051)
+        self.client = weaviate.connect_to_local(port=WEAVIATE_HTTP_PORT, grpc_port=WEAVIATE_GRPC_PORT)
     
     def close(self):
         """Close Weaviate connection."""
@@ -56,7 +60,6 @@ class MedicalSearchEngine:
             return False
     
     def get_knowledge_base_stats(self) -> Dict[str, int]:
-        """Get statistics about the knowledge base content."""
         stats = {}
         
         for collection_name in ["MedicalGuideline", "ResearchAbstract"]:
