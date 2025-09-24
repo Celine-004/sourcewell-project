@@ -11,17 +11,8 @@ import weaviate
 import sys
 from pathlib import Path
 from typing import Dict, Any
-
-SUPPORTED_CALCULATORS = ["FINDRISC", "ModifiedFramingham", "ColorectalScreening"] # if new calculator added to the app, just add it here
-REQUIRED_COLLECTIONS = ("MedicalGuideline", "ResearchAbstract")
-MIN_GUIDELINES_REQUIRED = 5
-DEFAULT_WEAVIATE_HTTP_PORT = 8080
-DEFAULT_WEAVIATE_GRPC_PORT = 50051
-
-# Environment-configurable ports
-WEAVIATE_HTTP_PORT = int(os.getenv("WEAVIATE_HTTP_PORT", DEFAULT_WEAVIATE_HTTP_PORT))
-WEAVIATE_GRPC_PORT = int(os.getenv("WEAVIATE_GRPC_PORT", DEFAULT_WEAVIATE_GRPC_PORT))
-
+from .config import WEAVIATE_HTTP_PORT, WEAVIATE_GRPC_PORT
+from .config import  SUPPORTED_CALCULATORS, REQUIRED_COLLECTIONS, MIN_GUIDELINES_REQUIRED
 
 # Core component imports  
 from .schema_setup import MedicalSchemaManager
@@ -33,7 +24,7 @@ if str(project_root) not in sys.path:
     sys.path.insert(0, str(project_root))
 
 
-# SourceWell version fallback configuration
+# version fallback configuration
 # Update FALLBACK_VERSION after reaching a stable version
 FALLBACK_VERSION = "0.1.0"
 FALLBACK_STATUS = "Development-Fallback"
@@ -63,16 +54,18 @@ __all__ = [
     "get_system_info",
     "check_system_health",
     "SUPPORTED_CALCULATORS",
+    "WEAVIATE_HTTP_PORT", 
+    "WEAVIATE_GRPC_PORT"
+    "SUPPORTED_CALCULATORS", 
+    "REQUIRED_COLLECTIONS", 
+    "MIN_GUIDELINES_REQUIRED",
     "__version__",
     "__status__"
 ]
 
 def get_system_info() -> Dict[str, Any]:
     """
-    Get comprehensive system information for healthcare operations.
-    
-    Returns:
-        System statistics and version information
+    Get system statistics and version information
     """
     try:
         version_info = get_version_info()
@@ -106,9 +99,6 @@ def get_system_info() -> Dict[str, Any]:
 def check_system_health() -> Dict[str, Any]:
     """
     Perform system health verification.
-    
-    Returns:
-        Dict with detailed health status for clinical operations
     """
     
     health = {
@@ -191,6 +181,6 @@ def _setup_logging():
 _setup_logging()
 
 if fallback_activated:
-    logging.warning(f"SourceWell version fallback activated - using v{__version__}")
+    logging.warning(f"version fallback activated - using v{__version__}")
 
 logging.info(f"SourceWell Knowledge Base v{__version__} - {__status__}")
