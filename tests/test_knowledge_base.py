@@ -9,7 +9,6 @@ import unittest
 import sys
 from pathlib import Path
 
-# Add project root to path for imports
 project_root = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(project_root))
 
@@ -22,7 +21,6 @@ class TestMedicalKnowledgeBase(unittest.TestCase):
     
     @classmethod
     def setUpClass(cls):
-        """Set up test environment."""
         cls.schema_manager = MedicalSchemaManager()
         cls.content_ingester = MedicalContentIngester()
         cls.search_engine = MedicalSearchEngine()
@@ -44,7 +42,6 @@ class TestMedicalKnowledgeBase(unittest.TestCase):
             pass
         
     def test_weaviate_connectivity(self):
-        """Test Weaviate server connectivity."""
         self.assertTrue(
             self.schema_manager.check_weaviate_connection(),
             "Cannot connect to Weaviate. Ensure 'docker-compose up -d' is running."
@@ -60,7 +57,6 @@ class TestMedicalKnowledgeBase(unittest.TestCase):
         self.assertIn("ResearchAbstract", existing_collections)
     
     def test_knowledge_base_statistics(self):
-        """Test knowledge base content statistics."""
         stats = self.search_engine.get_knowledge_base_stats()
         
         self.assertIn("MedicalGuideline", stats)
@@ -89,7 +85,6 @@ class TestMedicalKnowledgeBase(unittest.TestCase):
             print("  No search results found. Ensure content ingestion completed.")
     
     def test_calculator_specific_search(self):
-        """Test calculator-specific content filtering."""
         findrisc_results = self.search_engine.search_by_calculator("FINDRISC")
         
         if findrisc_results:
@@ -99,7 +94,6 @@ class TestMedicalKnowledgeBase(unittest.TestCase):
             print("  No FINDRISC content found. Check content curation.")
     
     def test_citation_integrity(self):
-        """Test citation generation and integrity."""
         results = self.search_engine.search_medical_content("medical", limit=1)
         
         if results:
@@ -113,12 +107,11 @@ class TestMedicalKnowledgeBase(unittest.TestCase):
             )
 
 def run_comprehensive_tests():
-    """Run all knowledge base tests with detailed output."""
-    print(" SourceWell Knowledge Base Comprehensive Testing")
+    print(" Knowledge Base Comprehensive Testing")
     print("=" * 60)
     
-    suite = unittest.TestSuite()
-    suite.addTest(unittest.makeSuite(TestMedicalKnowledgeBase))
+    loader = unittest.TestLoader()
+    suite = loader.loadTestsFromTestCase(TestMedicalKnowledgeBase)
     
     runner = unittest.TextTestRunner(verbosity=2, buffer=True)
     result = runner.run(suite)
