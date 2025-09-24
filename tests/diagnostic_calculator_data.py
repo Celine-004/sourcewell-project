@@ -1,12 +1,21 @@
+import os
+import sys
+from pathlib import Path
 import weaviate
+
+project_root = Path(__file__).resolve().parents[1]
+if str(project_root) not in sys.path:
+    sys.path.insert(0, str(project_root))
+
+from knowledge_base.config import WEAVIATE_HTTP_PORT, WEAVIATE_GRPC_PORT
 
 def inspect_calculator_support_data():
     """Inspect actual calculator_support data stored in Weaviate."""
     
-    client = weaviate.connect_to_local(port=8080, grpc_port=50051)
+    client = weaviate.connect_to_local(port=WEAVIATE_HTTP_PORT, grpc_port=WEAVIATE_GRPC_PORT)
     
     try:
-        print("SourceWell Calculator Support Data Inspection")
+        print("Calculator Support Data Inspection")
         print("=" * 55)
         
         for collection_name in ["MedicalGuideline", "ResearchAbstract"]:

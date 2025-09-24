@@ -1,15 +1,23 @@
-# infrastructure_test.py
+import os
+import sys
+from pathlib import Path
 import weaviate
 import json
-import sys
 from typing import Dict, List, Any
+
+project_root = Path(__file__).resolve().parents[1]
+if str(project_root) not in sys.path:
+    sys.path.insert(0, str(project_root))
+
+from knowledge_base.config import WEAVIATE_HTTP_PORT, WEAVIATE_GRPC_PORT
 
 def test_weaviate_connection():
     """Test basic Weaviate connectivity and module availability."""
     print("=== Testing Weaviate Connection ===")
     
     try:
-        client = weaviate.connect_to_local(port=8080, grpc_port=50051)
+        client = weaviate.connect_to_local(port=WEAVIATE_HTTP_PORT, grpc_port=WEAVIATE_GRPC_PORT)
+
         
         if not client.is_ready():
             print(" Failed to connect to Weaviate")
@@ -41,7 +49,7 @@ def test_content_counts():
     print("\n=== Testing Content Counts ===")
     
     try:
-        client = weaviate.connect_to_local(port=8080, grpc_port=50051)
+        client = weaviate.connect_to_local(port=WEAVIATE_HTTP_PORT, grpc_port=WEAVIATE_GRPC_PORT)
         
         # Check MedicalGuideline count
         mg_collection = client.collections.get("MedicalGuideline")
@@ -70,8 +78,7 @@ def test_semantic_search():
     print("\n=== Testing Semantic Search ===")
     
     try:
-        client = weaviate.connect_to_local(port=8080, grpc_port=50051)
-        
+        client = weaviate.connect_to_local(port=WEAVIATE_HTTP_PORT, grpc_port=WEAVIATE_GRPC_PORT)
         # Test semantic search on MedicalGuideline
         mg_collection = client.collections.get("MedicalGuideline")
         response = mg_collection.query.near_text(
@@ -103,7 +110,7 @@ def test_calculator_metadata():
     print("\n=== Testing Calculator Metadata ===")
     
     try:
-        client = weaviate.connect_to_local(port=8080, grpc_port=50051)
+        client = weaviate.connect_to_local(port=WEAVIATE_HTTP_PORT, grpc_port=WEAVIATE_GRPC_PORT)
         
         expected_calculators = ["FINDRISC", "ModifiedFramingham", "ColorectalScreening"]
         found_calculators = set()
@@ -142,7 +149,7 @@ def test_citation_format():
     print("\n=== Testing Citation Format ===")
     
     try:
-        client = weaviate.connect_to_local(port=8080, grpc_port=50051)
+        client = weaviate.connect_to_local(port=WEAVIATE_HTTP_PORT, grpc_port=WEAVIATE_GRPC_PORT)
         
         # Get a sample object to check citation format
         mg_collection = client.collections.get("MedicalGuideline")
