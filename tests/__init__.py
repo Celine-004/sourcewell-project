@@ -223,6 +223,15 @@ def validate_environment() -> Dict[str, Any]:
     
     return validation
 
+def run_calculator_tests():
+    """Run comprehensive calculator test suite."""
+    try:
+        from tests.test_calculators import run_comprehensive_calculator_tests
+        return run_comprehensive_calculator_tests()
+    except ImportError as e:
+        print(f"Calculator tests not available: {e}")
+        return False
+
 def run_full_suite(verbose: bool = True) -> Dict[str, Any]:
     """
     Execute complete SourceWell test suite with version tracking.
@@ -272,6 +281,14 @@ def run_full_suite(verbose: bool = True) -> Dict[str, Any]:
         test_suites['knowledge_base'] = False
         if verbose:
             print(f" Knowledge base tests failed: {e}")
+
+    # NEW: Calculator tests
+    try:
+        test_suites['calculators'] = run_calculator_tests()
+    except Exception as e:
+        test_suites['calculators'] = False
+        if verbose:
+            print(f" Calculator tests failed: {e}")
     
     results['test_results'] = test_suites
     results['overall_success'] = all(test_suites.values())
