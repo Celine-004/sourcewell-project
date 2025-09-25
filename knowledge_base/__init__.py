@@ -14,14 +14,14 @@ from typing import Dict, Any
 from .config import WEAVIATE_HTTP_PORT, WEAVIATE_GRPC_PORT
 from .config import  SUPPORTED_CALCULATORS, REQUIRED_COLLECTIONS, MIN_GUIDELINES_REQUIRED
 
-# Core component imports  
+project_root = Path(__file__).resolve().parents[1]
+if str(project_root) not in sys.path:
+    sys.path.insert(0, str(project_root))
+
 from .schema_setup import MedicalSchemaManager
 from .content_ingester import MedicalContentIngester
 from .search_engine import MedicalSearchEngine
 
-project_root = Path(__file__).resolve().parents[1]
-if str(project_root) not in sys.path:
-    sys.path.insert(0, str(project_root))
 
 
 # version fallback configuration
