@@ -1,300 +1,428 @@
 # SourceWell Risk Calculator Suite
-# Risk Assessment Calculators (FINDRISC, Framingham, Colorectal)   
 
-Evidence-based preventive health risk calculators with mandatory citation verification and knowledge base (KB) integration.
+Evidence-based preventive health risk calculators with mandatory citation verification and knowledge base integration for comprehensive patient assessment.
 
-This folder provides:
+## Overview
 
-- **FINDRISC** (diabetes) risk scoring with evidence-backed recommendations
-- **Modified Framingham** (cardiovascular) 10-year risk estimation with guideline-driven therapy prompts
-- **USPSTF 2021** colorectal cancer screening recommendations with risk stratification
-- **A Multi-Calculator Runner** that orchestrates all calculators into one comprehensive assessment
+The SourceWell Risk Calculator Suite provides three validated clinical risk assessment tools:
 
-All recommendations are citation-verified via the Knowledge Base, with robust evidence fallbacks if the KB is unavailable.
+- **FINDRISC Calculator**: Finnish Diabetes Risk Score for 10-year Type 2 diabetes risk assessment
+- **Modified Framingham Calculator**: 10-year cardiovascular disease risk estimation with AHA/ACC guidelines
+- **Colorectal Screening Calculator**: USPSTF 2021 colorectal cancer screening recommendations with risk stratification
+- **Multi-Calculator Runner**: Orchestrates all calculators for comprehensive integrated assessment
+
+All recommendations are evidence-based with dynamic citations from a knowledge base, plus robust fallbacks when the KB is unavailable.
+
+## Key Features
+
+- Evidence-based clinical recommendations with peer-reviewed citations
+- Knowledge base integration for dynamic guideline retrieval
+- Comprehensive error handling and validation
+- Medical disclaimers for therapy recommendations
+- Integrated risk profiling across multiple domains
+- Priority action generation for clinical workflow
+
+## Prerequisites
+
+### System Requirements
+
+- **Python 3.8+**: Core runtime environment
+- **Project Structure**: Must run from project root directory for proper imports
+- **System Path**: Project root automatically added to `sys.path` by calculator modules
+- **Cross-Platform**: Code uses `pathlib.Path` for cross-platform file path handling
+
+### Required Dependencies
+
+- **Patient Data Model**: `data_models/patient_data.py` with `PatientData` class and validation
+- **Test Scenarios**: `get_test_scenarios()` function for demonstration and testing
+
+### Optional Components
+
+- **Weaviate Knowledge Base**: For dynamic citation retrieval and evidence-based recommendations
+- **MedicalSearchEngine**: Enhanced evidence discovery when knowledge base is available
 
 ## Quick Start
 
-### Prerequisites
-
-- Python project root on `sys.path` (run from project root)
-- Patient data model available: `data_models/patient_data.py`
-- Optional (recommended): Weaviate KB running (`docker-compose up -d`) for dynamic citations
-
-### Run the comprehensive demo (preferred)
-
-**Module execution:**
+### Comprehensive Assessment (Recommended)
 
 ```bash
-# Windows/macOS/Linux
+# Run all calculators with integrated reporting
 python -m calculators.runner
 ```
 
-**Direct script execution:**
+### Individual Calculator Demos
+
+**macOS/Linux:**
 
 ```bash
-python calculators/runner.py
+python calculators/findrisc.py     # FINDRISC diabetes risk
+python calculators/framingham.py  # Framingham CVD risk  
+python calculators/colorectal.py  # Colorectal screening
 ```
 
-### Run individual calculators (demos)
+**Windows (Command Prompt):**
 
-```bash
-# FINDRISC
-python calculators/findrisc.py
-
-# Framingham
-python calculators/framingham.py
-
-# Colorectal
-python calculators/colorectal.py
+```cmd
+python calculators\findrisc.py     # FINDRISC diabetes risk
+python calculators\framingham.py  # Framingham CVD risk
+python calculators\colorectal.py  # Colorectal screening
 ```
 
-### Package import example (programmatic)
+### Programmatic Usage
 
 ```python
 from calculators import MultiCalculatorRunner
 from data_models.patient_data import PatientData, get_test_scenarios
 
+# Initialize runner and load patient data
 runner = MultiCalculatorRunner()
 patient = PatientData.from_dict(get_test_scenarios()['high_risk_middle_aged_male'])
+
+# Run comprehensive assessment
 results = runner.run_all_assessments(patient)
 runner.print_comprehensive_report(results)
 ```
 
-### Health check
+### Health Check
 
 ```python
 from calculators import check_calculator_health
 print(check_calculator_health())
 ```
 
-## Clinical Overview (Calculator-by-Calculator)
-
-All calculators implement evidence-based logic with citations from tier-1 sources. When medication or device therapy is suggested, user-facing text includes **"Consult your medical provider."**
+## Clinical Calculators
 
 ### FINDRISC - Finnish Diabetes Risk Score
 
-*Lindström & Tuomilehto, Diabetes Care 2003*
+*Based on: Lindström & Tuomilehto, Diabetes Care 2003*
 
-**Inputs:** age, gender, BMI (auto-calculated from PatientData), waist circumference, physical activity, fruit/vegetable intake, hypertension medication, prior high glucose, family diabetes history
+**Inputs**: Age, gender, BMI, waist circumference, physical activity, diet, hypertension medication, glucose history, family diabetes history
 
-**Scoring thresholds (total 0–26):**
+**Risk Categories** (Score 0-26):
 
-- `0–7`: Low (~1%)
-- `8–11`: Slightly elevated (~4%)
-- `12–14`: Moderate (~17%)
-- `15–20`: High (~33%)
-- `21–26`: Very high (~50%)
+- `0-7`: Low (1% 10-year risk)
+- `8-11`: Slightly elevated (4%)
+- `12-14`: Moderate (17%)
+- `15-20`: High (33%)
+- `21-26`: Very high (50%)
 
-**Evidence-based outputs:**
+**Outputs**: Diabetes screening recommendations, prevention program referrals, lifestyle interventions
 
-- Screening intervals and test recommendations (HbA1c, fasting glucose)
-- Diabetes prevention program evidence (DPP)
-- Lifestyle targets (weight reduction, physical activity, fiber intake)
+### Modified Framingham CVD Risk
 
-**Citations:** ADA Standards of Care, DPP trial, FINDRISC validation; KB dynamic citations when available
+*Based on: D'Agostino et al., Circulation 2008 + AHA/ACC 2018*
 
-### Modified Framingham 10-Year CVD Risk
+**Inputs**: Age (30-79), gender, total/HDL cholesterol, blood pressure, BP medications, smoking, diabetes
 
-*D'Agostino et al., Circulation 2008; AHA/ACC guidance*
-
-**Inputs:** age (30–79), gender, total cholesterol, HDL, systolic/diastolic BP, BP meds, smoking status, diabetes
-
-**Risk categories (2018 AHA/ACC):**
+**Risk Categories** (10-year CVD risk):
 
 - `<5%`: Low
-- `5–7.4%`: Borderline
-- `7.5–19.9%`: Intermediate
+- `5-7.4%`: Borderline
+- `7.5-19.9%`: Intermediate
 - `≥20%`: High
 
-**Evidence-based outputs:**
+**Outputs**: Statin therapy recommendations, BP targets, smoking cessation, lifestyle modifications (*All medication recommendations include "Consult your medical provider"*)
 
-- Statin therapy intensity (*"Consult your medical provider."*)
-- Blood pressure targets and therapy (*"Consult your medical provider."*)
-- Smoking cessation support
-- Diabetes agents with CV benefit (SGLT2/GLP-1) (*"Consult your medical provider."*)
-- Lifestyle (Mediterranean diet, 150 min/week exercise)
+### Colorectal Cancer Screening
 
-**Citations:** AHA/ACC 2017 BP, 2019 Primary Prevention, ADA Standards; KB dynamic citations when available
+*Based on: USPSTF 2021 Guidelines*
 
-### Colorectal Cancer Screening (USPSTF 2021)
+**Inputs**: Age, gender, family history, personal polyp history, IBD, previous screening
 
-**Inputs:** age, gender, first-degree family history & relative age at diagnosis, personal polyp history, IBD, hereditary risk, previous screening date/method
+**Age-Based Recommendations**:
 
-**Recommendations:**
-
-- `<45`: Not recommended unless increased/high risk (early family history → consider starting at 40 or 10 years before relative diagnosis)
-- `45–49`: Start now (Grade B)
-- `50–75`: Start now (Grade A)
-- `76–85`: Individualize decision (Grade C)
+- `<45`: Not recommended (unless high risk)
+- `45-49`: Start screening (Grade B)
+- `50-75`: Routine screening (Grade A)
+- `76-85`: Individualize (Grade C)
 - `≥85`: Not recommended (Grade D)
 
-**Methods & intervals:** Colonoscopy q10y, FIT yearly, Cologuard q3y (sigmoidoscopy optional)
-
-**High-risk/IBD/hereditary:** Gastroenterology referral (specialized schedule)
-
-**Citations:** USPSTF 2021, ACS 2018, NCCN; KB dynamic citations when available
-
-### Clinical disclaimer
-
-Where therapy is suggested (statins, antihypertensives, diabetes medications, nicotine replacement, aspirin), user-facing strings include **"Consult your medical provider."**
+**Methods**: Colonoscopy (q10y), FIT (annual), Cologuard (q3y)
 
 ## Technical Architecture
 
-### Modules
+### Core Modules
 
-- `calculators/findrisc.py` – FINDRISC calculator (evidence-based recommendation generation with KB + fallbacks)
-- `calculators/framingham.py` – Modified Framingham risk with AHA/ACC evidence-based recommendations (+ disclaimers)
-- `calculators/colorectal.py` – USPSTF 2021 screening logic with risk stratification and intervals
-- `calculators/runner.py` – Orchestrates all calculators, integrates results, generates priority actions and integrated risk profiles
-- `calculators/__init__.py` – Clean package interface (exports calculators and runner) + `check_calculator_health()`
+- `calculators/__init__.py` - Package interface with health check
+- `calculators/runner.py` - Multi-calculator orchestration and integration
+- `calculators/findrisc.py` - FINDRISC diabetes risk assessment
+- `calculators/framingham.py` - Modified Framingham CVD risk calculation
+- `calculators/colorectal.py` - USPSTF colorectal screening recommendations
 
-### Knowledge base integration
+### Knowledge Base Integration
 
-- **Dynamic citations:** All calculators query the KB via `MedicalSearchEngine` for relevant guideline/research passages and use their citations
-- **Fallback behavior:** If KB is unavailable, calculators provide validated static citations from peer-reviewed or major guideline sources
-- **Mandatory citation policy:** Each recommendation list is paired with `recommendation_citations`; each calculator also returns general `evidence_citations`
+- **Dynamic Citations**: Queries `MedicalSearchEngine` for relevant evidence
+- **Fallback System**: Validated static citations when KB unavailable
+- **Recommendation Pairing**: Each recommendation includes corresponding citations
 
-### Data flow
+### Data Flow
 
-1. Patient data is collected separately via `data_models.PatientData`
-2. `patient.to_calculator_dict()` produces a clean dict with validated fields and aliases for calculators
-3. Each calculator returns a structured dataclass (`FINDRISCResult`, `FraminghamResult`, `ColorectalResult`)
-4. Runner combines outputs and produces:
-   - Integrated risk profile (diabetes/CVD/screening)
-   - Priority clinical actions list with sensible escalation
+1. `PatientData` object provides validated input via `to_calculator_dict()`
+2. Individual calculators return structured results (`FINDRISCResult`, `FraminghamResult`, `ColorectalResult`)
+3. Runner integrates results into comprehensive assessment with priority actions
 
-### Error handling
+## Output Structure
 
-- Robust type checks and try/except paths ensure partial results are still returned
-- If one calculator fails, others continue; the runner reports errors per domain
-- Age-gating (e.g., Framingham 30–79) handled gracefully with eligibility notes
+### Individual Calculator Results
 
-### Import & execution strategy
+- **Risk scores/percentages** with validated thresholds
+- **Evidence-based recommendations** with citations
+- **Supporting evidence** from knowledge base or fallbacks
+- **Next steps** and follow-up intervals
 
-- All modules add the project root to `sys.path` at runtime for direct execution
-- Runner supports both absolute and relative imports (auto-detects)
-- **Preferred execution:** `python -m calculators.runner`
+### Integrated Runner Results
 
-### Performance
+- **Success metrics** and error handling per calculator
+- **Priority clinical actions** with urgency levels
+- **Integrated risk profile** across all domains
+- **Comprehensive reporting** with patient summaries
 
-- Knowledge base calls are limited per decision point (limit=1–3)
-- Duplicate recommendations/citations are de-duplicated while preserving order
+## Important Notes
 
-## How to Use (Developers)
+### Medical Disclaimers
 
-### Typical programmatic usage
+All medication and therapy recommendations include **"Consult your medical provider"** for appropriate clinical oversight.
+
+### Knowledge Base Fallbacks
+
+If the knowledge base is unavailable, calculators automatically use validated static citations from:
+
+- American Diabetes Association Standards of Care
+- AHA/ACC Prevention Guidelines
+- USPSTF Recommendations
+- Diabetes Prevention Program trials
+
+### Error Handling
+
+- Robust validation with meaningful error messages
+- Partial results returned if some calculators fail
+- Age-gating handled gracefully (e.g., Framingham 30-79 years)
+
+### Cross-Platform Compatibility
+
+- **File Paths**: Code uses `pathlib.Path` for automatic path separator handling
+- **Module Execution**: Use `python -m calculators.runner` for cross-platform compatibility
+- **Direct Script Execution**: Use forward slashes (/) on Unix/Linux/macOS, backslashes (\) on Windows
+- **Python Command**: May need `python3` instead of `python` on some Unix/Linux systems
+
+## Requirements
+
+Based on the imports and functionality found in the calculator files:
 
 ```python
-from calculators import MultiCalculatorRunner
-from data_models.patient_data import PatientData, get_test_scenarios
+# Core dependencies
+sys
+pathlib
+typing
+dataclasses
+enum
+datetime
+math
 
-runner = MultiCalculatorRunner()
-patient = PatientData.from_dict(get_test_scenarios()['high_risk_middle_aged_male'])
-results = runner.run_all_assessments(patient)
-runner.print_comprehensive_report(results)
+# Components
+data_models.patient_data
+knowledge_base.MedicalSearchEngine (optional)
+
+# External dependencies
+# None required (knowledge base integration optional)
 ```
 
-### Using individual calculators
+## Usage
+
+### Running Individual Calculators
 
 ```python
-from calculators import FINDRISCCalculator
+from calculators import FINDRISCCalculator, ModifiedFraminghamCalculator, ColorectalScreeningCalculator
+from data_models.patient_data import PatientData
 
-calc = FINDRISCCalculator()
-result = calc.calculate_findrisc(patient.to_calculator_dict())
-print(result.recommendations)
-print(result.recommendation_citations)
+# FINDRISC Example
+findrisc = FINDRISCCalculator()
+result = findrisc.calculate_findrisc(patient.to_calculator_dict())
+print(f"Diabetes Risk: {result.risk_level.value} ({result.ten_year_risk_percentage}%)")
+
+# Framingham Example (age 30-79)
+framingham = ModifiedFraminghamCalculator()
+cvd_result = framingham.calculate_framingham_risk(patient.to_calculator_dict())
+print(f"CVD Risk: {cvd_result.risk_level.value} ({cvd_result.ten_year_risk_percentage}%)")
+
+# Colorectal Example
+colorectal = ColorectalScreeningCalculator()
+screening_result = colorectal.assess_colorectal_screening(patient.to_calculator_dict())
+print(f"Screening: {screening_result.recommendation.value}")
 ```
 
-### Package health
+### Command Line Interface
 
-```python
-from calculators import check_calculator_health
-print(check_calculator_health())
+**Comprehensive assessment**
+
+```bash
+python -m calculators.runner
 ```
 
-### Command-line demos
+**Individual calculator demos**
+
+*macOS/Linux:*
 
 ```bash
 python calculators/findrisc.py
 python calculators/framingham.py
 python calculators/colorectal.py
-python -m calculators.runner
 ```
 
-## Inputs & Validation
+*Windows:*
 
-### Expected input source
+```cmd
+python calculators\findrisc.py
+python calculators\framingham.py
+python calculators\colorectal.py
+```
 
-- `data_models.PatientData` handles validation, normalization, and BMI auto-calculation
-- Use `PatientData.from_dict()` and `patient.validate()` before running calculators
+### Package Health Check
 
-### Key validation rules (high-level)
+```python
+from calculators import check_calculator_health
 
-- **Age:** FINDRISC (adult, practical use), Framingham (30–79), USPSTF screening (focus ≥45 unless increased risk)
-- **Clinical plausibility ranges** enforced by PatientData (BP, cholesterol, BMI derived from height/weight)
-- **Inter-field logic** (e.g., `family_colorectal_age` required when family history is positive)
+health_status = check_calculator_health()
+print(f"System Status: {health_status['status']}")
+print(f"Calculators Loaded: {health_status['calculators_loaded']}")
+```
 
-## Output Structure (Highlights)
+## Calculator Coverage
 
-### FINDRISCResult
+### FINDRISC Validation
 
-- `total_score`, `risk_level`, `ten_year_risk_percentage`, `risk_description`
-- `recommendations`, `recommendation_citations`
-- `evidence_citations`, `supporting_evidence`
+- **Risk Scoring**: Age, BMI, waist circumference, lifestyle factors validation
+- **Lifestyle Assessment**: Physical activity, diet, medication history scoring
+- **Family History**: Diabetes family history with proper risk weighting
+- **Evidence Integration**: Dynamic citations from knowledge base with ADA/DPP fallbacks
 
-### FraminghamResult
+### Modified Framingham Testing
 
-- `ten_year_risk_percentage`, `risk_level`, `risk_description`
-- `bp_category`
-- `recommendations`, `recommendation_citations`
-- `evidence_citations`, `supporting_evidence`
+- **Age Validation**: Proper handling of 30-79 age range with graceful degradation
+- **Risk Categorization**: AHA/ACC 2018 risk thresholds (low/borderline/intermediate/high)
+- **Blood Pressure**: 2017 AHA/ACC BP categories with treatment recommendations
+- **Medical Disclaimers**: "Consult your medical provider" inclusion for therapy recommendations
 
-### ColorectalResult
+### Colorectal Screening Assessment
 
-- `recommendation` (`START_NOW`, `CONTINUE`, `DISCUSS`, `NOT_RECOMMENDED`, `HIGH_RISK_REFERRAL`)
-- `recommended_methods`, `screening_interval`
-- `risk_level`, `rationale`, `next_screening_date`
-- `recommendations`, `recommendation_citations`
-- `evidence_citations`, `supporting_evidence`
+- **Age-Based Logic**: USPSTF 2021 age recommendations (45-49 Grade B, 50-75 Grade A)
+- **Risk Stratification**: Family history and personal risk factor evaluation
+- **High-Risk Referral**: Genetic counseling recommendations for hereditary conditions
+- **Screening Methods**: Colonoscopy, FIT, Cologuard interval management
 
-### Runner results
+## Configuration
 
-- `success`, `patient_summary`, `clinical_summary`, `assessment_date`
-- `results`: dict with domain results or error structures
-- `integrated_risk_profile`, `priority_actions`
-- `calculators_run`, `successful_assessments`
+### Version Management
 
-## Evidence & Citations
+```python
+__version__ = "1.0.0"
+__status__ = "Development - Calculators operational"
+__author__ = "Selin Birinci"
+```
 
-- **Dynamic retrieval:** Knowledge Base (Weaviate) via `MedicalSearchEngine` (calculator-specific and general evidence)
-- **Fallbacks:** ADA Standards of Care, AHA/ACC 2017/2019 guidelines, USPSTF 2021, DPP trial, D'Agostino 2008, ACS/NCCN for colorectal
-- Every recommendation list includes matching `recommendation_citations`; calculators also return `evidence_citations` summarizing source material used
+### Knowledge Base Integration
 
-## Safety & Compliance
+```python
+# Dynamic citation retrieval (when available)
+try:
+    from knowledge_base import MedicalSearchEngine
+    # KB-powered evidence retrieval
+except ImportError:
+    # Fallback to static evidence-based citations
+```
 
-- Medication/device recommendations include **"Consult your medical provider."**
-- The system is clinical decision support, not a substitute for medical judgment
-- All content must be validated through KB or established guidelines (fallbacks)
+### Required Patient Data Fields
 
-## Tips & Gotchas
+```python
+# Core demographics
+age, gender, height, weight  # BMI auto-calculated
 
-- If you see "Knowledge base unavailable," the system is using validated fallback citations—this is expected if Weaviate isn't running
-- Prefer running as a module for clean imports: `python -m calculators.runner`
-- Ensure `PatientData` validation passes before running assessments to avoid cascading errors
-- If adding new calculators, follow the same KB-first, fallback-second citation pattern and update `calculators/__init__.py` exports
+# Clinical measurements
+systolic_bp, diastolic_bp, total_cholesterol, hdl_cholesterol
+waist_circumference
 
-## References (Core)
+# Medical history
+hypertension_medication, diabetes, smoking_status
+high_glucose_history, family_diabetes_history
 
-1. Lindström J, Tuomilehto J. *Diabetes Care*. 2003;26(3):725–731 (FINDRISC)
-2. D'Agostino RB Sr, et al. *Circulation*. 2008;117(6):743–753 (Framingham general CVD risk)
-3. Whelton PK, et al. 2017 AHA/ACC BP Guideline. *Circulation*. 2018;138(17):e484–e594
-4. Arnett DK, et al. 2019 AHA/ACC Primary Prevention Guideline. *Circulation*. 2019;140(11):e596–e646
-5. US Preventive Services Task Force. *JAMA*. 2021;325(19):1965–1977 (Colorectal screening)
-6. American Diabetes Association. Standards of Medical Care in Diabetes—2024. *Diabetes Care*. 2024;47(Suppl 1):S1–S321
-7. Diabetes Prevention Program Research Group. *N Engl J Med*. 2002;346(6):393–403
+# Lifestyle factors
+physical_activity, vegetable_fruit_daily
 
----
+# Screening history
+family_colorectal_history, personal_polyp_history
+```
 
-**Version:** 1.0.0
-**Status:** Development – Calculators operational
-**Author:** Selin Birinci
+## Running Calculators
+
+### Prerequisites
+
+1. **Patient Data Model**: `data_models/patient_data.py` with `PatientData` class
+2. **Project Structure**: Run from project root for proper imports
+3. **Optional**: Weaviate knowledge base for dynamic citations
+
+### Individual Calculator Execution
+
+```bash
+# Test FINDRISC with demo data
+python calculators/findrisc.py      # Unix/Linux/macOS
+python calculators\findrisc.py      # Windows
+
+# Test Framingham with age validation
+python calculators/framingham.py    # Unix/Linux/macOS
+python calculators\framingham.py    # Windows
+
+# Test colorectal screening recommendations
+python calculators/colorectal.py    # Unix/Linux/macOS
+python calculators\colorectal.py    # Windows
+```
+
+### Comprehensive Assessment
+
+```bash
+# Run all calculators with integrated reporting (cross-platform)
+python -m calculators.runner
+
+# Alternative execution method
+python calculators/runner.py        # Unix/Linux/macOS
+python calculators\runner.py        # Windows
+```
+
+### Exit Codes and Error Handling
+
+- **Successful Assessment**: Complete results with recommendations and citations
+- **Partial Success**: Some calculators succeed, others report errors with graceful degradation
+- **Validation Errors**: Clear error messages for missing or invalid patient data
+- **Age-Gating**: Framingham reports eligibility notes for patients outside 30-79 range
+
+## Integration
+
+The calculator suite validates integration between:
+
+1. **Patient Data ↔ Calculators**: Validated input through `PatientData.to_calculator_dict()`
+2. **Calculators ↔ Knowledge Base**: Dynamic evidence retrieval with `MedicalSearchEngine`
+3. **Individual Results ↔ Runner**: Comprehensive assessment through `MultiCalculatorRunner`
+4. **Clinical Logic ↔ Citations**: Evidence-based recommendations with peer-reviewed citations
+
+### Knowledge Base Integration
+
+- Dynamic citation retrieval through `search_by_calculator()` and `search_medical_content()`
+- Fallback to validated static citations when KB unavailable
+- Recommendation-citation pairing for clinical transparency
+- Supporting evidence objects for rich clinical context
+
+### Runner Integration
+
+- **Priority Action Generation**: Clinical urgency assessment across all risk domains
+- **Integrated Risk Profiling**: Cross-calculator risk synthesis
+- **Comprehensive Reporting**: Formatted clinical summaries with patient demographics
+- **Error Resilience**: Partial results when individual calculators fail
+
+The calculator suite ensures clinical accuracy, evidence-based recommendations, and appropriate medical disclaimers across all SourceWell risk assessment components.
+
+## Core References
+
+1. Lindström J, Tuomilehto J. *Diabetes Care*. 2003;26(3):725-731 (FINDRISC)
+2. D'Agostino RB Sr, et al. *Circulation*. 2008;117(6):743-753 (Framingham)
+3. Arnett DK, et al. 2019 AHA/ACC Primary Prevention Guideline. *Circulation*. 2019;140(11):e596-e646
+4. US Preventive Services Task Force. *JAMA*. 2021;325(19):1965-1977 (Colorectal)
+5. American Diabetes Association. Standards of Medical Care in Diabetes—2024. *Diabetes Care*. 2024;47(Suppl 1):S1-S321
