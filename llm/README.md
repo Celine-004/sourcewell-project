@@ -538,4 +538,4 @@ wmic process where "commandline like '%phi3_engine%'" delete
 - **Python**: 3.8+ (3.10+ recommended)
 - **Weaviate**: 1.20+ for knowledge base features
 
-This documentation reflects the actual implementation capabilities and limitations of the SourceWell LLM Module as implemented in the codebase.
+This documentation reflects the actual implementation capabilities and limitations of the LLM Module as implemented in the codebase.
