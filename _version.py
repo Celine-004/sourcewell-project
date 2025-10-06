@@ -6,27 +6,105 @@ All modules import version data from here to maintain consistency.
 Semantic Versioning.
 """
 # application versioning
-__version__ = "0.3.0"
+__version__ = "0.4.0"
 
 #package metadata
 __author__ = "Selin Birinci"
 __description__ = "SourceWell - Evidence-based preventive health guidance platform"
-__status__ = "Development - Core Calculators Operational"
+__status__ = "Beta - Full Stack Operational with AI and Web Interface"
 __license__ = "MIT"
 
 # component versioning
 SCHEMA_VERSION = "1.1"           
-CONTENT_VERSION = "2024-09-16"   
-API_VERSION = "0.3"              
+CONTENT_VERSION = "2025-09-16"   
+API_VERSION = "0.4"              
 
 # Version history
 VERSION_HISTORY = {
+    "0.4.0": {
+        "release_date": "2025-10-6",
+        "status": "Beta - Full Stack Operational with AI and Web Interface",
+        "description": "Extends evidence-based calculator suite with AI-powered medical explanations via Phi-3 Mini and comprehensive Streamlit web interface, plus enhanced installation and deployment capabilities",
+        "schema_version": "1.1",
+        "content_version": "2025-09-16",
+        "api_version": "0.4",
+        "api_changes": [
+            "Added LLM module with Phi-3 Mini engine, citation verification, and structured explanation generation",
+            "Introduced Streamlit web application with multi-page navigation",
+            "Enhanced setup script with hardware-aware PyTorch 2.3.1 installation and project-local cache management",
+            "Extended calculator integration with AI explanation pipeline and visualization components"
+        ],
+        "breaking_changes": "None - additive functionality only",
+        "new_features": [
+            "AI-powered medical explanation generation using Microsoft Phi-3 Mini model",
+            "Multi-page Streamlit web interface: Patient History, Assessment, Report, Coaching",
+            "Interactive risk visualization with Plotly charts, gauges, and color-coded dashboards",
+            "Citation verification system with AI claim validation against knowledge base",
+            "Hardware-aware installation with GPU detection (NVIDIA, AMD, Intel, Apple Silicon)",
+            "Project-local storage management - all downloads and caches stored within project directory",
+            "Optional AI model predownloading for offline operation capability",
+            "Comprehensive error handling and graceful degradation for AI components"
+        ],
+        "calculator_integration": [
+            "Extended existing FINDRISC, Framingham, and Colorectal calculators with AI explanation generation",
+            "Integrated MultiCalculatorRunner with web interface and visualization pipeline",
+            "PatientData model integration with Streamlit form components"
+        ],
+        "technical_achievements": [
+            "Full-stack integration: Streamlit UI ↔ Risk Calculators ↔ LLM Engine ↔ Knowledge Base",
+            "Robust LLM engine with multiple initialization strategies and graceful degradation",
+            "Cross-platform PyTorch 2.3.1 installation with GPU acceleration support and CPU fallback",
+            "Memory optimization support via bitsandbytes 0.41.1 (with Windows compatibility fallbacks)",
+            "Comprehensive error handling and health monitoring across all components",
+            "RAG integration with knowledge base retrieval and citation verification pipeline"
+        ],
+        "infrastructure_improvements": [
+            "Cross-platform installation script with multi-vendor GPU detection and robust timeout handling",
+            "Project-local cache management: all HuggingFace models, pip cache, and temporary files stored in project/.cache directory",
+            "Environment variable configuration directs all caches to project folder (HF_HOME, PIP_CACHE_DIR, TMP/TEMP, TORCH_HOME)",
+            "Standardized on PyTorch 2.3.1",
+            "Requirements updated for AI/UI stack: transformers, sentence-transformers, streamlit, plotly",
+            "Added accelerate 1.10.1 for Hugging Face model optimization",
+            "Installation verification with component health checks and fallback validation",
+            "Robust timeout handling for large model downloads (up to 30 minutes)",
+            "Cache path persistence in configuration file for cross-process consistency"
+        ],
+        "ai_capabilities": [
+            "Microsoft Phi-3 Mini 4K model integration for contextual medical explanations",
+            "RAG integration with knowledge base retrieval and citation verification",
+            "Intelligent fallback to text-based summaries when AI components fail",
+            "Hardware-optimized inference with GPU acceleration and 4-bit quantization",
+            "Structured response format with confidence scores(will be dinamic in the next update) and verification metadata"
+        ],
+        "medical_compliance": [
+            "AI-generated explanations include medical disclaimers and professional consultation guidance",
+            "Citation verification pipeline maintains evidence-based recommendations when knowledge base available",
+            "Fallback mechanisms ensure system availability when AI components unavailable",
+            "Structured error handling prevents incomplete medical information delivery",
+            "All therapy recommendations include 'Consult your medical provider' disclaimers"
+        ],
+        "system_requirements": [
+            "Disk space: ~8GB for AI models (stored in project/.cache directory)",
+            "RAM: 8GB minimum, 16GB recommended for GPU acceleration",
+            "Network: Stable connection required for initial model download (~7-8GB)",
+            "PyTorch 2.3.1 with CUDA 12.1/11.8 support or CPU fallback"
+        ],
+        "development_status": [
+            "Core functionality implemented and locally tested on primary development platform(Windows)",
+            "Cross-platform installation support implemented with hardware detection",
+            "AI model performance varies by hardware (5-180 seconds per explanation)",
+            "Medical content accuracy requires professional validation before clinical deployment"
+        ],
+        "notes": "Major expansion: Adds AI explanation engine and comprehensive web interface to existing calculator foundation from 0.3.0. Provides complete healthcare AI platform with evidence-based risk assessment, intuitive user interface, and AI-powered insights while maintaining medical safety standards. PyTorch 2.3.1 standardization ensures broad compatibility. Project-local storage keeps all downloads contained within project directory for predictable file management. Technical capabilities documented; comprehensive cross-platform testing and medical validation recommended before production deployment."
+    },
+
+
     "0.3.0": {
-        "release_date": "2024-09-25",
+        "release_date": "2025-09-25",
         "status": "Development - Core Calculators Operational",
         "description": "Complete evidence-based risk calculator suite with comprehensive testing and clinical validation",
         "schema_version": "1.1",
-        "content_version": "2024-09-16",
+        "content_version": "2025-09-16",
         "api_version": "0.3",
         "api_changes": [
             "Added complete risk calculator API with MultiCalculatorRunner orchestration",
@@ -61,11 +139,11 @@ VERSION_HISTORY = {
     },
 
     "0.2.0": {
-    "release_date": "2024-09-24",
+    "release_date": "2025-09-24",
     "status": "Development - Production Infrastructure Ready", 
     "description": "Production-ready infrastructure with centralized configuration, universal installer, and enhanced deployment capabilities",
     "schema_version": "1.1",
-    "content_version": "2024-09-16",
+    "content_version": "2025-09-16",
     "api_version": "0.2",
     "api_changes": "Added centralized configuration module (knowledge_base.config) with environment-aware port management; enhanced test framework with CLI execution",
     "breaking_changes": "Weaviate port configuration moved from hardcoded values to centralized config module",
@@ -95,11 +173,11 @@ VERSION_HISTORY = {
     "notes": "Core dependencies streamlined (torch removed from requirements.txt); infrastructure hardened for production deployment scenarios"
 },
     "0.1.0": {
-        "release_date": "2024-09-20",
+        "release_date": "2025-09-20",
         "status": "Development - Knowledge Base Operational",
         "description": "First version release - Knowledge base backend operational",
         "schema_version": "1.0",
-        "content_version": "2024-09-16",
+        "content_version": "2025-09-16",
         "api_version": "0.1",
         "api_changes": "Initial public API established: MedicalSchemaManager, MedicalContentIngester, MedicalSearchEngine classes with documented method signatures",
         "breaking_changes": None,
