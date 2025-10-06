@@ -18,6 +18,7 @@ Usage:
     python setup_sourcewell.py --show-config    # Show current configuration
 """
 
+from __future__ import annotations
 import os
 import re
 import sys
@@ -32,9 +33,21 @@ from typing import Dict, Optional, List, Tuple, Any
 
 class SourceWellConfig:
     
-    DEFAULT_PYTORCH_VERSION = "2.5.1"
+    # pytorch configuration
+    DEFAULT_PYTORCH_VERSION = "2.3.1"
     DEFAULT_CUDA_VERSION = "121"
     DEFAULT_ROCM_VERSION = "6.0"
+
+    # ai optimization packages
+    DEFAULT_BITSANDBYTES_VERSION = "0.41"
+
+    #model configuration pakages
+    DEFAULT_AI_MODEL_ID = "microsoft/Phi-3-mini-4k-instruct"
+    DEFAULT_EMBEDDING_MODEL_ID = "sentence-transformers/all-MiniLM-L6-v2"
+    ENABLE_MODEL_PREDOWNLOAD = True
+
+    # Windows fallback for bitsandbytes
+    WINDOWS_BITSANDBYTES_WHEEL = "https://github.com/jllllll/bitsandbytes-windows-webui/releases/download/wheels/bitsandbytes-0.41.1-py3-none-win_amd64.whl"
     
     # PyTorch CUDA compatibility matrix (actual available wheels)
     PYTORCH_CUDA_COMPATIBILITY = {
@@ -51,9 +64,17 @@ class SourceWellConfig:
     def _load_configuration(self) -> Dict[str, str]:
         """Load configuration with precedence: ENV > config file > defaults."""
         config = {
+            # pytorch versions
             'pytorch_version': self.DEFAULT_PYTORCH_VERSION,
             'cuda_version': self.DEFAULT_CUDA_VERSION,
             'rocm_version': self.DEFAULT_ROCM_VERSION,
+
+            # ai package versions
+            'bitsandbytes_version': self.DEFAULT_BITSANDBYTES_VERSION,
+            'ai_model_id': self.DEFAULT_AI_MODEL_ID,
+            'embedding_model_id': self.DEFAULT_EMBEDDING_MODEL_ID,
+            'enable_model_predownload': self.ENABLE_MODEL_PREDOWNLOAD,
+
         }
         
         # 1. Load from config file (if exists)
@@ -62,20 +83,28 @@ class SourceWellConfig:
                 with open(self.config_file, 'r', encoding='utf-8') as f:
                     file_config = json.load(f)
                     config.update(file_config.get('versions', {}))
+                    config.update(file_config.get('models', {}))  # ADD THIS LINE
             except Exception as e:
                 print(f"Warning: Could not load config file: {e}")
-        
+                
         # 2. Override with environment variables (highest priority)
         env_mappings = {
             'SOURCEWELL_PYTORCH_VERSION': 'pytorch_version',
             'SOURCEWELL_CUDA_VERSION': 'cuda_version',
             'SOURCEWELL_ROCM_VERSION': 'rocm_version',
+            'SOURCEWELL_BITSANDBYTES_VERSION': 'bitsandbytes_version',
+            'SOURCEWELL_AI_MODEL': 'ai_model_id',                   
+            'SOURCEWELL_PREDOWNLOAD_MODELS': 'enable_model_predownload'
         }
         
         for env_var, config_key in env_mappings.items():
             env_value = os.getenv(env_var)
             if env_value:
-                config[config_key] = env_value
+                 env_value = os.getenv(env_var)
+                 if config_key == 'enable_model_predownload':
+                    config[config_key] = env_value.lower() in ('1', 'true', 'yes', 'on')
+                 else:
+                    config[config_key] = env_value
         
         return config
     
@@ -118,13 +147,33 @@ class SourceWellConfig:
     def get_rocm_version(self) -> str:
         return self.config['rocm_version']
     
+    def get_bitsandbytes_version(self) -> str:
+        return self.config['bitsandbytes_version']
+    
+    def get_ai_model_id(self) -> str:
+        return self.config['ai_model_id']
+        
+    def get_embedding_model_id(self):
+        return self.config['embedding_model_id']
+
+    def should_predownload_models(self) -> bool:
+        return bool(self.config['enable_model_predownload'])
+
     def create_sample_config(self) -> bool:
         sample_config = {
             "versions": {
                 "pytorch_version": self.DEFAULT_PYTORCH_VERSION,
                 "cuda_version": self.DEFAULT_CUDA_VERSION,
-                "rocm_version": self.DEFAULT_ROCM_VERSION
+                "rocm_version": self.DEFAULT_ROCM_VERSION,
+                "bitsandbytes_version": self.DEFAULT_BITSANDBYTES_VERSION
             },
+
+            "models": {
+                "ai_model_id": self.DEFAULT_AI_MODEL_ID,
+                "embedding_model_id": self.DEFAULT_EMBEDDING_MODEL_ID,
+                "enable_model_predownload": self.ENABLE_MODEL_PREDOWNLOAD
+            },
+
             "_comment": "SourceWell Configuration - Edit versions as needed",
             "_cuda_info": "CUDA versions: 121 (CUDA 12.1), 118 (CUDA 11.8) - compatible with CUDA 13.0+ drivers"
         }
@@ -137,6 +186,50 @@ class SourceWellConfig:
         except Exception as e:
             print(f" Could not create config file: {e}")
             return False
+
+    def save_cache_paths(self, hf_home: str, temp_path: str = None, pip_cache: str = None):
+        """Save the chosen cache paths to config file for other processes to use."""
+        try:
+            # Load existing config or create new structure
+            config_data = {}
+            if self.config_file.exists():
+                with open(self.config_file, 'r', encoding='utf-8') as f:
+                    config_data = json.load(f)
+            
+            # Add cache_paths section
+            if 'cache_paths' not in config_data:
+                config_data['cache_paths'] = {}
+            
+            config_data['cache_paths']['huggingface'] = hf_home
+            if temp_path:
+                config_data['cache_paths']['temp'] = temp_path
+            if pip_cache:
+                config_data['cache_paths']['pip_cache'] = pip_cache
+            
+            # Ensure other sections exist
+            if 'versions' not in config_data:
+                config_data['versions'] = {
+                    "pytorch_version": self.DEFAULT_PYTORCH_VERSION,
+                    "cuda_version": self.DEFAULT_CUDA_VERSION,
+                    "rocm_version": self.DEFAULT_ROCM_VERSION,
+                    "bitsandbytes_version": self.DEFAULT_BITSANDBYTES_VERSION
+                }
+            
+            if 'models' not in config_data:
+                config_data['models'] = {
+                    "ai_model_id": self.DEFAULT_AI_MODEL_ID,
+                    "embedding_model_id": self.DEFAULT_EMBEDDING_MODEL_ID,
+                    "enable_model_predownload": self.ENABLE_MODEL_PREDOWNLOAD
+                }
+            
+            # Save updated config
+            with open(self.config_file, 'w', encoding='utf-8') as f:
+                json.dump(config_data, f, indent=2)
+            
+            print(f" Cache paths saved to config: {self.config_file}")
+            
+        except Exception as e:
+            print(f" Could not save cache paths: {e}")
 
 class SourceWellInstaller:
 
@@ -183,107 +276,85 @@ class SourceWellInstaller:
         
     def _configure_adaptive_storage_management(self, min_free_gb: float = 10.0) -> Dict[str, Any]:
         """
-        Intelligently configure storage when space is constrained.
-        Only activates when current temp location has insufficient space.
-        Process-level changes only - no permanent system modifications.
+        Configure storage to always use project directory for all caches.
+        This ensures all downloads stay within the project folder.
         """
         storage_config = {
-            'activated': False,
-            'reason': None,
+            'activated': True,  # Always activated
+            'reason': 'Project-local storage (all files stay in project)',
             'temp_path': None,
             'cache_path': None,
             'original_free_gb': 0
         }
         
         try:
-            import tempfile
-            current_temp = Path(tempfile.gettempdir())
+            # Always use project directory regardless of available space
+            project_cache_base = self.project_root / ".cache"
             
-            # Cross-platform disk usage check
-            total, used, free = shutil.disk_usage(current_temp)
-            free_gb = free / (1024**3)
-            storage_config['original_free_gb'] = free_gb
+            # Check project directory space
+            project_total, project_used, project_free = shutil.disk_usage(self.project_root)
+            project_free_gb = project_free / (1024**3)
+            storage_config['original_free_gb'] = project_free_gb
             
-            print(f" Current temp location: {current_temp} ({free_gb:.1f}GB free)")
+            print(f" Project directory: {self.project_root}")
+            print(f" Available space: {project_free_gb:.1f}GB")
             
-            if free_gb < min_free_gb:
-                print(f"  Insufficient temp space ({free_gb:.1f}GB < {min_free_gb}GB required)")
-                
-                # Platform-specific alternative storage selection
-                alternative_base = None
-                
-                if self.system_info['os'] == 'windows':
-                    d_drive = Path('D:/')
-                    if d_drive.exists():
-                        d_total, d_used, d_free = shutil.disk_usage(d_drive)
-                        d_free_gb = d_free / (1024**3)
-                        if d_free_gb >= min_free_gb * 2:  # Ensure adequate space
-                            alternative_base = d_drive / "sourcewell_cache"
-                            storage_config['reason'] = f"D: drive has {d_free_gb:.1f}GB available"
-                    
-                    # Fallback to project directory
-                    if not alternative_base:
-                        project_total, project_used, project_free = shutil.disk_usage(self.project_root)
-                        project_free_gb = project_free / (1024**3)
-                        if project_free_gb >= min_free_gb:
-                            alternative_base = self.project_root / ".cache"
-                            storage_config['reason'] = f"Project directory has {project_free_gb:.1f}GB available"
-                
-                else:  # macOS/Linux
-                    # Use project directory .cache
-                    try:
-                        project_total, project_used, project_free = shutil.disk_usage(self.project_root)
-                        project_free_gb = project_free / (1024**3)
-                        if project_free_gb >= min_free_gb:
-                            alternative_base = self.project_root / ".cache"
-                            storage_config['reason'] = f"Project cache has {project_free_gb:.1f}GB available"
-                    except Exception:
-                        pass
-                
-                # Configure alternative storage if found
-                if alternative_base:
-                    temp_dir = alternative_base / "temp"
-                    cache_dir = alternative_base / "pip_cache"
-                    
-                    temp_dir.mkdir(parents=True, exist_ok=True)
-                    cache_dir.mkdir(parents=True, exist_ok=True)
-                    (alternative_base / "huggingface").mkdir(parents=True, exist_ok=True)
-                    
-                    # Set process-level environment variables
-                    os.environ['TMP'] = str(temp_dir)
-                    os.environ['TEMP'] = str(temp_dir)
-                    os.environ['PIP_CACHE_DIR'] = str(cache_dir)
-                    os.environ['HF_HOME'] = str(alternative_base / "huggingface")
-                    os.environ.pop('TRANSFORMERS_CACHE', None)
-                    
-                    storage_config.update({
-                        'activated': True,
-                        'temp_path': str(temp_dir),
-                        'cache_path': str(cache_dir)
-                    })
-                    
-                    print(f" Activated alternative storage: {alternative_base}")
-                    print(f" Reason: {storage_config['reason']}")
-                    
-                else:
-                    print(f" No suitable alternative storage found")
-                    print(f" Recommend freeing space or manually setting --cache-dir")
-                    storage_config['reason'] = "No alternative storage with adequate space"
+            # Warn if space is low but continue anyway
+            if project_free_gb < min_free_gb:
+                print(f"  Warning: Low disk space ({project_free_gb:.1f}GB < {min_free_gb}GB recommended)")
+                print(f"   Model downloads require ~8GB. Consider freeing space if needed.")
             
-            else:
-                print(f" Adequate temp space available ({free_gb:.1f}GB)")
-                os.environ.pop('TRANSFORMERS_CACHE', None)
-                hf_cache_dir = self.project_root / ".cache" / "huggingface"
-                hf_cache_dir.mkdir(parents=True, exist_ok=True)
-                os.environ.setdefault('HF_HOME', str(hf_cache_dir))
-                print(f"    HF_HOME configured: {os.environ['HF_HOME']}")
-
+            # Create all cache directories in project folder
+            temp_dir = project_cache_base / "temp"
+            pip_cache_dir = project_cache_base / "pip_cache"
+            hf_cache_dir = project_cache_base / "huggingface"
+            
+            # Create directories
+            temp_dir.mkdir(parents=True, exist_ok=True)
+            pip_cache_dir.mkdir(parents=True, exist_ok=True)
+            hf_cache_dir.mkdir(parents=True, exist_ok=True)
+            
+            # Set all environment variables to use project directory
+            os.environ['TMP'] = str(temp_dir)
+            os.environ['TEMP'] = str(temp_dir)
+            os.environ['TMPDIR'] = str(temp_dir)  # For Unix-like systems
+            os.environ['PIP_CACHE_DIR'] = str(pip_cache_dir)
+            os.environ['HF_HOME'] = str(hf_cache_dir)
+            os.environ['TRANSFORMERS_CACHE'] = str(hf_cache_dir / "transformers")  # Legacy support
+            os.environ['HF_DATASETS_CACHE'] = str(hf_cache_dir / "datasets")
+            os.environ['TORCH_HOME'] = str(project_cache_base / "torch")
+            
+            # Create torch cache directory
+            (project_cache_base / "torch").mkdir(parents=True, exist_ok=True)
+            
+            storage_config.update({
+                'activated': True,
+                'temp_path': str(temp_dir),
+                'cache_path': str(pip_cache_dir),
+                'hf_cache_path': str(hf_cache_dir),
+                'reason': f'Project-local storage configured ({project_free_gb:.1f}GB available)'
+            })
+            
+            print(f" All downloads will be saved to: {project_cache_base}")
+            print(f"    Temp files: {temp_dir.relative_to(self.project_root)}")
+            print(f"    Pip cache: {pip_cache_dir.relative_to(self.project_root)}")
+            print(f"    AI models: {hf_cache_dir.relative_to(self.project_root)}")
+            print(f"    PyTorch: {project_cache_base.relative_to(self.project_root)}/torch")
+            
         except Exception as e:
-            print(f" Storage detection failed: {e}")
-            storage_config['reason'] = f"Detection error: {e}"
+            print(f" Storage configuration warning: {e}")
+            print(f"   Continuing with system defaults...")
+            storage_config['reason'] = f"Configuration error: {e}"
+        
+        # Always persist the cache paths for other processes
+        hf_home = os.getenv('HF_HOME', str(self.project_root / ".cache" / "huggingface"))
+        temp_path = os.getenv('TMP', str(self.project_root / ".cache" / "temp"))
+        pip_cache = os.getenv('PIP_CACHE_DIR', str(self.project_root / ".cache" / "pip_cache"))
+        
+        self.config.save_cache_paths(hf_home, temp_path, pip_cache)
         
         return storage_config
-    
+
     def _detect_gpu_hardware(self) -> Dict[str, Any]:
         capabilities = {
             'nvidia_detected': False,
@@ -372,37 +443,38 @@ class SourceWellInstaller:
             config['description'] = 'CPU-only PyTorch (user requested)'
             return config
         
-        # Priority: NVIDIA > Apple Silicon > AMD ROCm > Intel XPU > CPU
+        bitsandbytes_version = self.config.get_bitsandbytes_version()
+        
         if self.gpu_capabilities['nvidia_detected']:
             detected_cuda = self.gpu_capabilities.get('nvidia_cuda_version')
             cuda_version = self.config.get_cuda_version(detected_cuda)
-            
             config.update({
                 'method': 'nvidia_cuda',
                 'packages': [f'torch=={self.pytorch_version}+cu{cuda_version}'],
                 'index_url': f'https://download.pytorch.org/whl/cu{cuda_version}',
-                'description': f'NVIDIA CUDA-enabled PyTorch {self.pytorch_version} (cu{cuda_version})',
-                'expected_acceleration': f'CUDA {cuda_version} (NVIDIA GPU)'
+                'extra_packages': [f'bitsandbytes>={bitsandbytes_version}'],
+                'windows_fallback_wheel': self.config.WINDOWS_BITSANDBYTES_WHEEL,
+                'description': f'NVIDIA CUDA-enabled PyTorch {self.pytorch_version} with 4-bit quantization',
+                'expected_acceleration': f'CUDA {cuda_version} (NVIDIA GPU with 4-bit quantization)'
             })
-        
         elif self.gpu_capabilities['apple_silicon']:
             config.update({
                 'method': 'apple_mps',
                 'packages': [f'torch=={self.pytorch_version}'],
-                'description': f'Apple Silicon PyTorch {self.pytorch_version} with MPS',
-                'expected_acceleration': 'MPS (Apple GPU)'
+                'extra_packages': [f'bitsandbytes>={bitsandbytes_version}'],
+                'description': f'Apple Silicon PyTorch {self.pytorch_version} with MPS and 4-bit quantization',
+                'expected_acceleration': 'MPS (Apple GPU with 4-bit quantization support)'
             })
-        
         elif self.gpu_capabilities['amd_rocm_detected']:
             rocm_version = self.config.get_rocm_version()
             config.update({
                 'method': 'amd_rocm',
                 'packages': [f'torch=={self.pytorch_version}+rocm{rocm_version}'],
                 'index_url': f'https://download.pytorch.org/whl/rocm{rocm_version}',
+                'extra_packages': [],
                 'description': f'AMD ROCm-enabled PyTorch {self.pytorch_version}',
                 'expected_acceleration': f'ROCm {rocm_version} (AMD GPU)'
             })
-        
         elif self.gpu_capabilities['intel_gpu_detected']:
             config.update({
                 'method': 'intel_xpu',
@@ -411,7 +483,6 @@ class SourceWellInstaller:
                 'description': f'Intel GPU PyTorch {self.pytorch_version} with XPU',
                 'expected_acceleration': 'XPU (Intel GPU)'
             })
-        
         return config
     
     def _filter_requirements_content(self) -> str:
@@ -428,16 +499,22 @@ class SourceWellInstaller:
                 filtered_lines.append(line)
                 continue
             
-            # Filter PyTorch-related packages
             lower_line = stripped.lower()
+
+            # Filter PyTorch-related packages
             if any(pkg in lower_line for pkg in ['torch==', 'torch>=', 'torch<', 'torchvision', 'torchaudio']):
                 skipped_lines.append(line)
                 continue
             
+            # Filter bitsandbytes 
+            if 'bitsandbytes' in lower_line:
+                skipped_lines.append(line)
+                continue
+
             filtered_lines.append(line)
         
         if skipped_lines:
-            print(" Filtered PyTorch lines from requirements.txt:")
+            print(" Filtered device-specific packages from requirements.txt:")
             for line in skipped_lines:
                 print(f"    - {line}")
         
@@ -567,33 +644,61 @@ class SourceWellInstaller:
             return False
         
         print("   PyTorch installation completed!")
-        
-        # Install extra packages if needed (Intel XPU extensions, etc.)
+         
+        # Install extra packages (bitsandbytes, Intel XPU, etc.)
         if self.pytorch_config['extra_packages']:
-            print("   Installing additional GPU packages...")
-            extra_cmd = base_cmd + self.pytorch_config['extra_packages']
-            success, _, stderr = self._run_command(extra_cmd, timeout=600)
+            print("   Installing AI optimization packages...")
+            
+            # Use clean pip command for PyPI packages (no torch index URL)
+            extra_cmd = [
+                sys.executable, '-m', 'pip', 'install',
+                '--timeout', '600', '--retries', '3',
+            ] + self.pytorch_config['extra_packages']
+            
+            success, _, stderr = self._run_command(extra_cmd, timeout=900)
             
             if success:
-                print("   Additional packages installed!")
+                print("    AI optimization packages installed!")
             else:
-                print(f"    Additional packages warning: {stderr}")
-        
+                print(f"    AI packages failed: {stderr}")
+                
+                # Windows-specific bitsandbytes fallback
+                if (self.system_info['os'] == 'windows' and 
+                    any('bitsandbytes' in pkg for pkg in self.pytorch_config['extra_packages'])):
+                    
+                    fallback_wheel = self.pytorch_config.get('windows_fallback_wheel')
+                    if fallback_wheel:
+                        print("   Trying Windows bitsandbytes wheel...")
+                        win_cmd = [sys.executable, '-m', 'pip', 'install', fallback_wheel]
+                        win_success, _, _ = self._run_command(win_cmd, timeout=300)
+                        
+                        if win_success:
+                            print("    Windows bitsandbytes installed!")
+                        else:
+                            print("    Proceeding without 4-bit quantization")
+
         return True
     
     def verify_installation(self) -> bool:
-        """Instalation verification."""
+        """Installation verification with fault-tolerant architecture."""
         print(" Verifying installation...")
         
-        results = {'pytorch_import': False, 'gpu_acceleration': False, 'core_dependencies': False}
+        results = {
+            'pytorch_import': False,
+            'gpu_acceleration': False, 
+            'core_dependencies': False,
+            'ai_optimization': False
+        }
         
+        # Phase 1: Critical PyTorch functionality
+        torch_available = False
         try:
-            # Test PyTorch import and GPU
             import torch
+            torch_available = True  
             results['pytorch_import'] = True
             print(f" PyTorch {torch.__version__} imported successfully")
             
-            # Test GPU acceleration based on method
+            # GPU acceleration testing (only if PyTorch imported)
             if self.pytorch_config['method'] == 'nvidia_cuda':
                 if torch.cuda.is_available():
                     device_name = torch.cuda.get_device_name(0)
@@ -602,33 +707,78 @@ class SourceWellInstaller:
                     results['gpu_acceleration'] = True
                 else:
                     print(" CUDA not available")
-            
             elif self.pytorch_config['method'] == 'apple_mps':
                 if hasattr(torch.backends, 'mps') and torch.backends.mps.is_available():
                     print(" Apple MPS acceleration available")
                     results['gpu_acceleration'] = True
                 else:
-                    print("  MPS not available")
-            
+                    print(" MPS not available")
             else:
                 print(" PyTorch ready")
                 results['gpu_acceleration'] = True
-            
-            # Test core dependencies
-            try:
-                import weaviate, streamlit, fastapi, sentence_transformers
-                print(" Core dependencies verified")
-                results['core_dependencies'] = True
-            except ImportError as e:
-                print(f" Missing dependency: {e}")
-            
+                
         except ImportError as e:
             print(f" PyTorch import failed: {e}")
         
+        # Phase 2: Core dependencies (independent test)
+        try:
+            import weaviate, streamlit, fastapi, sentence_transformers
+            print(" Core dependencies verified")
+            results['core_dependencies'] = True
+        except ImportError as e:
+            print(f" Missing core dependency: {e}")
+        
+        # Phase 3: AI optimization (guarded and isolated)
+        if self.pytorch_config.get('extra_packages') and torch_available:  
+            try:
+                if any('bitsandbytes' in pkg for pkg in self.pytorch_config['extra_packages']):
+                    # Re-import torch in this scope to be explicit
+                    import torch
+                    import bitsandbytes
+                    from transformers import BitsAndBytesConfig
+                    
+                    # Test quantization config creation
+                    config = BitsAndBytesConfig(
+                        load_in_4bit=True,
+                        bnb_4bit_compute_dtype=torch.float16,  
+                        bnb_4bit_use_double_quant=True,
+                        bnb_4bit_quant_type="nf4"
+                    )
+                    
+                    print(f" AI optimization: bitsandbytes {bitsandbytes.__version__} (4-bit quantization ready)")
+                    results['ai_optimization'] = True
+                else:
+                    print(" No AI optimization packages configured")
+                    results['ai_optimization'] = True
+                    
+            except Exception as e:
+                print(f" AI optimization warning: {e}")
+                print("   Phi-3 Mini will run without quantization (higher VRAM usage)")
+                results['ai_optimization'] = True  # Don't fail installation for optional features
+        else:
+            if not torch_available:
+                print(" Skipping AI optimization check (PyTorch not available)")
+            results['ai_optimization'] = True  # Don't penalize for missing optional features
+        
+        # Final assessment with intelligent scoring
         passed = sum(results.values())
-        print(f"\n Verification: {passed}/3 checks passed")
-        return passed >= 2
-    
+        total = len(results)
+        print(f"\n Verification Summary: {passed}/{total} components verified")
+        
+        # Require core functionality (PyTorch + dependencies) for success
+        essential_components = results['pytorch_import'] and results['core_dependencies']
+        
+        if essential_components:
+            print(" Installation verification successful!")
+            if not results['gpu_acceleration']:
+                print("   Note: GPU acceleration not available - using CPU mode")
+            if not all(results.values()):
+                print("   Note: Some optimizations unavailable but core functionality works")
+            return True
+        else:
+            print(" Installation verification failed - core components missing")
+            return False
+        
     def save_installation_log(self):
         log_file = self.project_root / "sourcewell_installation.log"
         try:
@@ -646,21 +796,175 @@ class SourceWellInstaller:
         except Exception as e:
             print(f"  Could not save log: {e}")
     
+    def install_ai_models(self) -> bool:
+        """Download AI models with progress tracking."""
+        if not self.config.should_predownload_models():
+            print(" Model predownload disabled")
+            return True
+        
+        print(" Downloading AI models...")
+        
+        success_count = 0
+        
+        # Download Phi-3 Mini (~7.6GB)
+        if self._download_phi3_model():
+            success_count += 1
+        
+        # Download embedding model (~90MB)  
+        if self._download_embedding_model():
+            success_count += 1
+        
+        print(f" {success_count}/2 AI models downloaded")
+        return True  # Don't fail installation for model issues
+
+    def _download_phi3_model(self) -> bool:
+        """Download Phi-3 Mini with proper caching."""
+        model_id = self.config.get_ai_model_id()
+        print(f"    Downloading {model_id} (~7.6GB)")
+        
+        try:
+            from transformers import AutoModelForCausalLM, AutoTokenizer
+            import torch
+            
+            # Get cache directory from environment
+            cache_dir = os.getenv('HF_HOME', str(self.project_root / '.cache' / 'huggingface'))
+            
+            print(f"    Cache location: {cache_dir}")
+            
+            # Download tokenizer first (small, quick feedback)
+            print("    Downloading tokenizer...")
+            tokenizer = AutoTokenizer.from_pretrained(
+                model_id, 
+                trust_remote_code=True,
+                cache_dir=cache_dir
+            )
+            if tokenizer.pad_token is None:
+                tokenizer.pad_token = tokenizer.eos_token
+            print("    ✓ Tokenizer cached")
+            
+            # Determine optimal dtype based on hardware
+            if self.gpu_capabilities['nvidia_detected'] or self.gpu_capabilities['apple_silicon']:
+                torch_dtype = torch.float16
+                print("    Using FP16 for GPU optimization")
+            else:
+                torch_dtype = torch.float32
+                print("    Using FP32 for CPU")
+            
+            # Download model
+            print("    Downloading model files (this may take 10-20 minutes)...")
+            model = AutoModelForCausalLM.from_pretrained(
+                model_id,
+                torch_dtype=torch_dtype,
+                trust_remote_code=True,
+                low_cpu_mem_usage=True,
+                cache_dir=cache_dir
+            )
+            print("    ✓ Phi-3 Mini model cached successfully")
+            
+            # Verify the cache exists
+            model_cache_path = Path(cache_dir) / "models--microsoft--Phi-3-mini-4k-instruct"
+            if model_cache_path.exists():
+                # List cached files for verification
+                print("    Cached model files:")
+                snapshot_dir = model_cache_path / "snapshots"
+                if snapshot_dir.exists():
+                    for snapshot in snapshot_dir.iterdir():
+                        if snapshot.is_dir():
+                            model_files = list(snapshot.glob("*.safetensors")) + list(snapshot.glob("*.bin"))
+                            if model_files:
+                                total_size = sum(f.stat().st_size for f in model_files) / (1024**3)
+                                print(f"      Snapshot: {snapshot.name} ({total_size:.1f}GB)")
+            
+            # Cleanup
+            del model, tokenizer
+            if torch.cuda.is_available():
+                torch.cuda.empty_cache()
+            import gc
+            gc.collect()
+            
+            return True
+            
+        except Exception as e:
+            print(f"    ❌ Download failed: {e}")
+            print("    You can manually download later using:")
+            print(f"      python -c \"from transformers import AutoModelForCausalLM; AutoModelForCausalLM.from_pretrained('{model_id}')\"")
+            return False
+
+    def _get_optimal_download_dtype(self) -> torch.dtype:
+        """Determine optimal dtype for model download based on detected hardware."""
+        import torch
+        
+        # If forced to CPU, use CPU-optimal precision
+        if self.force_cpu:
+            return torch.float32
+        
+        # GPU detected - use FP16 for efficiency
+        if (self.gpu_capabilities['nvidia_detected'] or 
+            self.gpu_capabilities['apple_silicon'] or 
+            self.gpu_capabilities['amd_rocm_detected'] or 
+            self.gpu_capabilities['intel_gpu_detected']):
+            return torch.float16
+        
+        # CPU fallback
+        return torch.float32
+
+    def _get_device_description(self) -> str:
+        """Get human-readable description of optimization target."""
+        if self.force_cpu:
+            return "CPU-only (user requested)"
+        elif self.gpu_capabilities['nvidia_detected']:
+            return "NVIDIA GPU (FP16 caching)"
+        elif self.gpu_capabilities['apple_silicon']:
+            return "Apple Silicon MPS (FP16 caching)"
+        elif self.gpu_capabilities['amd_rocm_detected']:
+            return "AMD ROCm (FP16 caching)"
+        elif self.gpu_capabilities['intel_gpu_detected']:
+            return "Intel GPU (FP16 caching)"
+        else:
+            return "CPU fallback (FP32 caching)"
+
+    def _device_aware_cleanup(self) -> None:
+        """Perform device-appropriate memory cleanup."""
+        import torch
+        import gc
+        
+        # NVIDIA CUDA cleanup
+        if torch.cuda.is_available():
+            torch.cuda.empty_cache()
+        
+        # Apple Silicon MPS cleanup
+        elif hasattr(torch.backends, 'mps') and torch.backends.mps.is_available():
+            if hasattr(torch.mps, 'empty_cache'):
+                torch.mps.empty_cache()
+        
+        # General cleanup for all devices
+        gc.collect()
+
+    def _download_embedding_model(self) -> bool:
+        """Download embedding model for citation verification."""
+        try:
+            from sentence_transformers import SentenceTransformer
+            model = SentenceTransformer(self.config.get_embedding_model_id())
+            print("    Embedding model cached")
+            del model
+            return True
+        except Exception as e:
+            print(f"    Embedding download failed: {e}")
+            return False
+
     def run_complete_installation(self, auto_confirm: bool = False) -> bool:
-        # Intelligent storage configuration (only when needed)
+        # Display system analysis
         self.print_system_analysis()
         
-        if self.storage_config['activated']:
-            print(" Storage Management:")
-            print(f"    Using alternative temp/cache location")
-            print(f"    Temp: {self.storage_config['temp_path']}")
-            print(f"    Cache: {self.storage_config['cache_path']}")
-            print()
-        elif self.storage_config['original_free_gb'] < 10:
-            print(" Storage Notice:")
-            print(f"     Limited free space ({self.storage_config['original_free_gb']:.1f}GB)")
-            print(f"   Monitor installation progress for space issues")
-            print()
+        # Show storage configuration (always active now)
+        print("📂 Storage Configuration:")
+        print(f"   All files will be downloaded to project directory")
+        print(f"   Location: {self.project_root / '.cache'}")
+        print(f"   Available space: {self.storage_config['original_free_gb']:.1f}GB")
+        
+        if self.storage_config['original_free_gb'] < 10:
+            print(f"   ⚠️ Low space warning: AI models require ~8GB")
+        print()
         
         # Virtual environment check
         if not self.system_info['in_venv'] and not auto_confirm:
@@ -686,11 +990,21 @@ class SourceWellInstaller:
             ("Core Dependencies", self.install_core_dependencies),
             ("PyTorch", self.install_pytorch),
         ]
+
+        # Add optional AI models step
+        if self.config.should_predownload_models():
+            steps.append(("AI Models", self.install_ai_models))
         
         for step_name, step_func in steps:
+            # Interactive prompt for large downloads
+            if step_name == "AI Models" and not auto_confirm:
+                response = input("   Download AI models now? (~7.6GB) (y/N): ").lower()
+                if response not in ['y', 'yes']:
+                    print("     Skipping model downloads")
+                    continue
+            
             if not step_func():
-                print(f" {step_name} failed - aborting")
-                self.save_installation_log()
+                print(f" {step_name} failed")
                 return False
         
         # Verification
@@ -700,6 +1014,9 @@ class SourceWellInstaller:
         if success:
             print("\nInstallation completed!")
             print("=" * 50)
+            print(" All downloads saved in project folder:")
+            print(f"   {self.project_root / '.cache'}")
+            print()
             print("Next steps:")
             if self.pytorch_config.get('method') == 'nvidia_cuda':
                 print("1) GPU Check: python -c \"import torch; print('GPU:', torch.cuda.get_device_name(0) if torch.cuda.is_available() else 'CPU-only')\"")
@@ -740,6 +1057,9 @@ def main():
     parser.add_argument('--auto', action='store_true', help='Automatic installation')
     parser.add_argument('--cpu-only', action='store_true', help='Force CPU-only PyTorch')
     
+     # Download-models opyion
+    parser.add_argument('--download-models', action='store_true', help='Download AI models only')
+
     args = parser.parse_args()
     
     config = SourceWellConfig()
@@ -754,13 +1074,60 @@ def main():
         print(f"PyTorch Version: {config.get_pytorch_version()}")
         print(f"CUDA Version: {config.get_cuda_version()}")
         print(f"ROCm Version: {config.get_rocm_version()}")
+        print(f"Bitsandbytes Version: {config.get_bitsandbytes_version()}")
+        print(f"AI Model ID: {config.get_ai_model_id()}")
+        print(f"Embedding Model ID: {config.get_embedding_model_id()}")
+        print(f"Predownload Models: {config.should_predownload_models()}")
         print(f"Config File: {config.config_file}")
         sys.exit(0)
     
+    if args.download_models:
+        print("SourceWell Model Downloader")
+        print("=" * 40)
+        print("This will download:")
+        print(f"   {config.get_ai_model_id()} (~7.6GB)")
+        print(f"   {config.get_embedding_model_id()} (~90MB)")
+        print()
+
+        installer = SourceWellInstaller(
+            pytorch_version=args.pytorch_version,
+            force_cpu=args.cpu_only,
+            config=config
+        )
+        
+        # Set up cache paths
+        installer._configure_adaptive_storage_management()
+        
+        print(f"Models will be saved to: {installer.project_root / '.cache' / 'huggingface'}")
+        print()
+        
+        # Download models
+        success = True
+        if installer._download_phi3_model():
+            print("✅ Phi-3 Mini downloaded successfully")
+        else:
+            print("❌ Phi-3 Mini download failed")
+            success = False
+        
+        if installer._download_embedding_model():
+            print("✅ Embedding model downloaded successfully")
+        else:
+            print("❌ Embedding model download failed")
+            success = False
+        
+        if success:
+            print("\n✅ All models downloaded successfully!")
+            print("\nYou can now run the application offline.")
+        else:
+            print("\n⚠️ Some models failed to download")
+            print("Check your internet connection and try again.")
+        
+        sys.exit(0 if success else 1)
+
     installer = SourceWellInstaller(
-        pytorch_version=args.pytorch_version,
-        force_cpu=args.cpu_only,
-        config=config
+    pytorch_version=args.pytorch_version,
+    force_cpu=args.cpu_only,
+    config=config
     )
     
     success = installer.run_complete_installation(auto_confirm=args.auto)
