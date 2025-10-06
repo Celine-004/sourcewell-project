@@ -1,0 +1,18 @@
+{
+  "versions": {
+    "pytorch_version": "2.3.1",
+    "cuda_version": "121",
+    "rocm_version": "6.0",
+    "bitsandbytes_version": "0.41.0"
+  },
+  "models": {
+    "ai_model_id": "microsoft/Phi-3-mini-4k-instruct",
+    "embedding_model_id": "sentence-transformers/all-MiniLM-L6-v2",
+    "enable_model_predownload": true
+  },
+  "cache_paths": {
+    "huggingface": "D:\\preventive_health_app\\.cache\\huggingface",
+    "temp": "D:\\preventive_health_app\\.cache\\temp",
+    "pip_cache": "D:\\preventive_health_app\\.cache\\pip_cache"
+  }
+}
