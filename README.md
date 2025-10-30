@@ -6,126 +6,216 @@
 
 > Evidence-based preventive health guidance platform combining validated clinical risk calculators with AI-powered explanations and mandatory citation verification.
 
-## Project Overview
+## Problem Statement & Solution
 
-SourceWell Project addresses the gap between generic health advice and personalized medical guidance by combining validated clinical risk calculators with AI-powered explanations sourced from peer-reviewed medical literature. It empowers users with transparent, evidence-backed insights tailored to their personal and family health history.
+### The Challenge
 
-### Problem Statement
-Individuals often receive generalized health advice that doesn't account for their unique personal and family medical history. This can lead to missed prevention opportunities, reduced engagement with healthcare recommendations, and a lack of trust in AI-generated insights due to opacity.
+Individuals often receive generalized health advice that doesn't account for their unique personal and family medical history. This leads to missed prevention opportunities, reduced engagement with healthcare recommendations, and a lack of trust in AI-generated insights due to opacity.
 
-### Solution Approach
-The project implements a hybrid intelligent system that:
-- **Collects Tiered Health Data**: Adapts to user's medical knowledge level (basic to clinical-grade).
-- **Executes Validated Risk Calculations**: Utilizes established medical formulas (FINDRISC, Modified Framingham, Colorectal screening).
-- **Retrieves Relevant Medical Evidence**: Employs semantic search on a curated knowledge base.
-- **Generates Personalized Explanations**: Provides plain-language insights tailored to the user.
-- **Enforces Mandatory Citation Verification**: Ensures every medical claim is traceable to its source.
-- **Offers Interactive Prevention Coaching**: Guides users with actionable, evidence-backed steps.
+### Our Approach
 
-### Key Innovation
-**Mandatory Citation Verification**: A core differentiator, this system automatically verifies that every medical claim presented to the user is directly supported by passages from curated, peer-reviewed medical sources. Any claim without verifiable evidence is either removed or flagged, ensuring unprecedented accuracy, transparency, and trustworthiness in AI-generated health guidance.
+SourceWell implements a hybrid intelligent system that:
 
-## Technical Architecture
+- **Collects Patient Health Data**: Comprehensive data collection with clinical validation
+- **Executes Validated Risk Calculations**: Utilizes established medical formulas (FINDRISC, Modified Framingham, Colorectal screening)
+- **Retrieves Relevant Medical Evidence**: Employs semantic search on a curated knowledge base
+- **Generates Personalized Explanations**: Provides AI-powered insights with local LLM inference
+- **Enforces Mandatory Citation Verification**: Ensures every medical claim is traceable to its source
+- **Provides Evidence-Based Recommendations**: Clinical guidelines with peer-reviewed citations
 
-### System Design
-The application operates on a modular, agentic architecture orchestrated to seamlessly integrate validated medical science with advanced AI capabilities.
+## Key Innovation: Mandatory Citation Verification
 
+**Core Differentiator**: SourceWell automatically verifies that every medical claim presented to users is directly supported by passages from curated, peer-reviewed medical sources. Any claim without verifiable evidence is either removed or flagged, ensuring unprecedented accuracy, transparency, and trustworthiness in AI-generated health guidance.
 
-### Technology Stack
-- **Frontend**: Streamlit with custom CSS for an elegant, calming user experience.
-- **Backend**: FastAPI for robust, asynchronous API orchestration and business logic.
-- **AI Models**: 
-    - **Phi-3 Mini**: A local, open-source large language model for generating plain-language explanations (optimized for GPU inference).
-    - **Sentence-Transformers (all-MiniLM-L6-v2)**: For creating embeddings for semantic search.
-- **Knowledge Base**: Weaviate vector database for storing and semantically searching medical guidelines and research abstracts with rich metadata.
-- **Risk Calculators**: Custom Python implementations of clinically validated formulas (FINDRISC, Modified Framingham, Colorectal Cancer Screening).
-- **Deployment**: Docker Compose for containerizing Weaviate, ensuring easy setup and cross-platform compatibility.
-- **Platform**: Designed for Windows (with WSL2), macOS, and Linux; optimized for NVIDIA GPUs (like GTX 1060).
+## System Architecture
 
-### Core Components
+```
+SourceWell Platform
+├── Frontend (Streamlit)           # Interactive web interface
+├── Risk Calculators              # Validated clinical assessments
+├── Knowledge Base (Weaviate)     # Medical literature & guidelines
+├── LLM Engine (Phi-3 Mini)      # AI explanation generation
+├── Citation Verifier            # Mandatory evidence verification
+└── Patient Data Model           # Clinical validation system
+```
 
-**1. Tiered Data Collection**
-An adaptive input system that caters to varying levels of user medical knowledge:
-- **Tier 1 (Universal Access)**: Basic demographics (age, sex, height, weight for BMI), lifestyle factors (smoking, activity), chronic conditions (checkboxes), and family history.
-- **Tier 2 (Health-Aware)**: Exact blood pressure measurements (systolic/diastolic), ethnicity, more detailed family history.
-- **Tier 3 (Health-Savvy)**: Specific lab values (cholesterol, glucose), detailed medical history.
+The platform operates on a modular, agentic architecture that seamlessly integrates validated medical science with advanced AI capabilities, ensuring all outputs are evidence-based and clinically appropriate.
 
-**2. Evidence-Based Risk Assessment**
-Implementation of established medical risk calculators:
-- **FINDRISC**: For 10-year Type 2 diabetes risk.
-- **Modified Framingham CVD Risk**: For 10-year cardiovascular disease risk, using exact BP readings.
-- **Colorectal Cancer Screening**: Guidelines-based recommendations.
-These calculators provide baseline risk scores, which then inform the AI's explanation and evidence retrieval.
+## Core Modules
 
-**3. Semantic Knowledge Retrieval**
-A curated knowledge base of open-source medical guidelines and PubMed abstracts is stored in Weaviate. This system performs semantic (meaning-based) searches to find highly relevant passages, ensuring that all retrieved information comes with complete citation metadata (PubMed IDs, DOIs, publication dates, evidence grades).
+### [Risk Calculator Suite](calculators/README.md)
 
-**4. AI Explanation with Citation Enforcement**
-The local Phi-3 Mini LLM synthesizes the retrieved medical passages into plain-language explanations and personalized coaching advice. Crucially, a custom **Citation Verifier** module analyzes the LLM's output, automatically identifying and removing any medical claims that cannot be directly traced and cited to the provided evidence, thus maintaining the highest standard of medical accuracy and transparency.
+Evidence-based preventive health risk calculators with knowledge base integration:
+
+- **FINDRISC**: Finnish Diabetes Risk Score (10-year Type 2 diabetes risk)
+- **Modified Framingham**: Cardiovascular disease risk with AHA/ACC guidelines
+- **Colorectal Screening**: USPSTF 2021 cancer screening recommendations
+- **Multi-Calculator Runner**: Comprehensive integrated assessment
+
+### [Medical Knowledge Base](knowledge_base/README.md)
+
+Comprehensive medical content management with semantic search:
+
+- Clinical guidelines and research abstracts from Markdown files
+- Vancouver-style citation generation
+- Weaviate vector database with semantic search
+- Calculator-specific content filtering and validation
+
+### [LLM Engine](llm/README.md)
+
+AI explanation system with comprehensive error handling:
+
+- Microsoft Phi-3 Mini (4k-instruct) for local inference
+- Citation verifier validates AI claims against medical sources
+- Extensive error handling with text-based fallbacks
+- GPU acceleration (NVIDIA/AMD) with CPU fallback support
+
+### [Patient Data Model](data_models/README.md)
+
+Clinical validation system for adult preventive healthcare:
+
+- Evidence-based validation ranges based on medical literature
+- Automatic BMI calculation with WHO categorization
+- Biological plausibility validation (not normality)
+- Clean data export for calculator integration
+
+### [Test Suite](tests/README.md)
+
+Comprehensive testing for clinical accuracy and system reliability:
+
+- Multi-calculator validation
+- Knowledge base integrity testing
+- AI integration verification
+- Healthcare compliance validation
+
+### [Web Interface](app/README.md)
+
+Interactive Streamlit-based healthcare risk assessment application:
+
+- Multi-page navigation (Pacient History, Assessment, Report, Coaching)
+- Interactive risk visualization with Plotly charts
+- Results display with priority actions
+- Session state management
+
+## Technology Stack
+
+### Core Technologies
+
+- **Frontend**: Streamlit with custom CSS styling
+- **AI Models**: Microsoft Phi-3 Mini (local inference), Sentence-Transformers
+- **Knowledge Base**: Weaviate vector database with semantic search
+- **Risk Calculators**: Custom Python implementations of validated clinical formulas
+- **Platform**: Cross-platform (Windows/WSL2, macOS, Linux) with NVIDIA GPU optimization
+
+### Key Dependencies
+
+- **Python 3.11+** with scientific computing libraries
+- **Docker Desktop** for Weaviate deployment
+- **PyTorch** for AI model inference
+- **Plotly** for interactive data visualization
+- **Weaviate** for vector database operations
 
 ## Quick Start
 
 ### Prerequisites
-Before you begin, ensure your system meets these requirements:
-- **Python**: Version 3.11+ with `pip`
-- **Docker Desktop**: Installed and running (with WSL2 enabled for Windows)
-- **NVIDIA GPU**: Recommended for faster AI inference (GTX 1060 6GB+ VRAM)
-- **RAM**: 16GB or more
-- **Storage**: ~15GB free space (preferably on D: drive for Windows users)
+
+- **Python 3.11+** with pip
+- **Docker Desktop** installed and running
+- **16GB RAM** (8GB minimum)
+- **NVIDIA GPU** recommended (GTX 1060+ with 4GB VRAM)
+- **15GB storage** for models and cache
 
 ### Installation
-1.  **Clone the Repository:**
-    ```bash
-    git clone https://github.com/[your-github-username]/sourcewell-project.git
-    cd sourcewell-project
-    ```
-2.  **Create and Activate Virtual Environment:**
-    ```bash
-    python -m venv healthcare_env
-    # For Windows:
-    healthcare_env\Scripts\activate
-    # For macOS/Linux:
-    # source healthcare_env/bin/activate
-    ```
-3.  **Install Python Dependencies:**
-    ```bash
-    pip install -r requirements.txt
-    ```
-4.  **Start Weaviate Knowledge Base (using Docker Compose):**
-    ```bash
-    docker-compose up -d
-    ```
-5.  **Start FastAPI Backend API:**
-    ```bash
-    uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload &
-    ```
-6.  **Start Streamlit Frontend:**
-    ```bash
-    streamlit run app/ui.py
-    ```
 
-### Usage
-1.  Open your web browser and navigate to `http://localhost:8501`.
-2.  Interact with the "Heritage" section to input personal and family health data.
-3.  Click "Assess My Health Risks" to generate a personalized report.
-4.  Explore the "Report" and "Coaching" sections for evidence-backed insights and recommendations.
+1. **Clone and Setup Environment**
+
+```bash
+git clone https://github.com/Celine-004/sourcewell-project
+cd sourcewell-project
+
+python -m venv healthcare_env
+# Windows:
+healthcare_env\Scripts\activate
+# macOS/Linux:
+# source healthcare_env/bin/activate
+
+python setup_sourcewell.py --auto
+```
+
+2. **Start Core Services**
+
+```bash
+# Start Weaviate knowledge base
+docker-compose up -d
+
+# Initialize medical content (first run)
+python -m knowledge_base.schema_setup setup
+python -m knowledge_base.content_ingester
+```
+
+3. **Launch Application**
+
+```bash
+# Start web interface
+streamlit run app/main.py
+```
+
+4. **Access Platform**
+   - Open browser to `http://localhost:8501`
+   - Complete patient data collection
+   - Run comprehensive risk assessments
+   - Review AI-generated insights with citations
+
+### Quick Test
+
+```bash
+# Validate system health
+python -m tests
+
+# Test individual calculators
+python -m calculators.runner
+```
+
+## Project Structure
+
+```
+sourcewell-project/
+├── app/                    # Web interface module
+├── calculators/           # Risk assessment suite
+├── knowledge_base/        # Medical content management
+├── llm/                   # AI explanation engine
+├── data_models/          # Patient data validation
+├── tests/                # Comprehensive test suite
+├── data/                 # Medical content repository
+├── docker-compose.yml    # Weaviate deployment
+├── requirements.txt      # Python dependencies
+└── README.md            # This file
+```
 
 ## Key Features
 
--   **Adaptive Intelligence**: Dynamically selects appropriate risk calculators and tailors explanations based on available user data.
--   **Citation Integrity**: Every medical claim is automatically verified and linked to its source, ensuring unparalleled trustworthiness.
--   **Privacy-First**: All data processing, including AI inference, occurs locally on your machine, with no external data transmission.
--   **Cross-Platform Compatibility**: Designed to run seamlessly across Windows, macOS, and Linux environments.
--   **Modular Design**: A highly organized architecture allows for independent updates, easy integration of new calculators, and future expansion.
--   **Elegant User Experience**: A calming, professional interface with a calming color palette, inspired by a family tree aesthetic.
+- **Privacy-First**: All processing occurs locally—no external data transmission
+- **Evidence-Based**: Recommendation backed by peer-reviewed medical literature
+- **Personalized**: Risk assessments tailored to individual and family health history
+- **Transparent**: Complete citation tracking and source verification
+- **Adaptive**: Graceful degradation with comprehensive error handling
+- **Cross-Platform**: Seamless operation across Windows, macOS, and Linux
+- **AI-Powered**: Local LLM with mandatory citation verification
+- **Interactive**: Rich visualizations and intuitive user interface
 
 ## Medical Disclaimer
 
-This application provides educational health information only and is NOT a substitute for professional medical advice, diagnosis, or treatment. Always consult qualified healthcare providers for medical decisions. Users assume full responsibility for health decisions. The information provided is for educational purposes and should not be used to diagnose or treat any health problem or disease.
+**Important**: This application provides educational health information only and is **NOT** a substitute for professional medical advice, diagnosis, or treatment. Always consult qualified healthcare providers for medical decisions. Users assume full responsibility for health decisions. The information provided is for educational purposes and should not be used to diagnose or treat any health problem or disease.
+
+All AI-generated explanations require clinical validation. The system includes fallback mechanisms but cannot guarantee 100% uptime or accuracy.
 
 ## License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
 ---
-*Developed as part of AI Solutions Architect Capstone Project - Advancing evidence-based healthcare technology.*
+
+**Development Status**: Academic Capstone Project - Advancing Evidence-Based Healthcare Technology
+**Author**: Selin Birinci
+
+*For detailed technical documentation, implementation guides, and API references, please refer to the individual module READMEs linked above.*
