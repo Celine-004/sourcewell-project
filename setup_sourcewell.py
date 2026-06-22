@@ -448,11 +448,14 @@ class SourceWellInstaller:
         if self.gpu_capabilities['nvidia_detected']:
             detected_cuda = self.gpu_capabilities.get('nvidia_cuda_version')
             cuda_version = self.config.get_cuda_version(detected_cuda)
-            config.update({
+            extra_pkgs = [f'bitsandbytes=={bitsandbytes_version}']
+	    if self.system_info['os'] == 'linux':
+	        extra_pkgs.append('triton==2.3.1')
+	    config.update({
                 'method': 'nvidia_cuda',
                 'packages': [f'torch=={self.pytorch_version}+cu{cuda_version}'],
                 'index_url': f'https://download.pytorch.org/whl/cu{cuda_version}',
-                'extra_packages': [f'bitsandbytes>={bitsandbytes_version}'],
+                'extra_packages': extra_pkgs,
                 'windows_fallback_wheel': self.config.WINDOWS_BITSANDBYTES_WHEEL,
                 'description': f'NVIDIA CUDA-enabled PyTorch {self.pytorch_version} with 4-bit quantization',
                 'expected_acceleration': f'CUDA {cuda_version} (NVIDIA GPU with 4-bit quantization)'
@@ -1030,7 +1033,7 @@ class SourceWellInstaller:
             print()
             
             if self.storage_config.get('activated'):
-                print("  Storage: D: drive cache active (C: drive protected)")
+                print(f"  Storage: Project cache active ({self.project_root / '.cache'})")
                 print()
         else:
             print("\nInstallation completed with issues")

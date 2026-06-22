@@ -14,13 +14,13 @@ sys.path.insert(0, str(project_root))
 logger = logging.getLogger(__name__)
 
 try:
-    from llm.utils.citation_verifier import CitationVerifier
+    from llm.citation_verifier import CitationVerifier
 except ImportError:
     try:
-        from .utils.citation_verifier import CitationVerifier
+        from .citation_verifier import CitationVerifier
     except ImportError:
         try:
-            from utils.citation_verifier import CitationVerifier
+            from citation_verifier import CitationVerifier
         except ImportError:
             logger.warning("CitationVerifier not available - verification will be disabled")
             CitationVerifier = None
@@ -192,7 +192,8 @@ class Phi3MiniEngine:
     
     def generate_explanation(self, patient_data: Dict, risk_results: Dict, 
                             explanation_type: str = "general", 
-                            include_citations: bool = True) -> Dict[str, Any]:
+                            include_citations: bool = True,
+                            strict_verification: bool = False) -> Dict[str, Any]:
         """Generate AI explanation with RAG support"""
         
         # Check if components are available

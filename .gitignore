@@ -256,3 +256,4 @@ exports/
 .DS_Store
 Thumbs.db
 desktop.ini
+sourcewell_config.json
