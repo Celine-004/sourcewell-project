@@ -17,7 +17,9 @@ import warnings
 warnings.filterwarnings("ignore", message=".*torch_dtype.*deprecated.*")
 warnings.filterwarnings("ignore", message=".*flash-attention.*")
 warnings.filterwarnings("ignore", message=".*TRANSFORMERS_CACHE.*")
-
+warnings.filterwarnings("ignore", message=".*weaviate-client version.*")
+warnings.filterwarnings("ignore", message=".*save_pretrained.*4-bit.*")
+warnings.filterwarnings("ignore", message=".*bitsandbytes>=0.41.3.*")
 
 class Qwen3Wrapper:
     """Wrapper for Qwen3-4B model optimized for GPU inference with 4-bit quantization"""
@@ -82,7 +84,7 @@ class Qwen3Wrapper:
         """Detect optimal device for inference"""
         if torch.cuda.is_available():
             gpu_count = torch.cuda.device_count()
-            memory = torch.cuda.get_device_properties(0).total_mem / 1024**3
+            memory = torch.cuda.get_device_properties(0).total_memory / 1024**3
             self.logger.info(f"CUDA available: {gpu_count} GPU(s), {memory:.1f}GB memory")
             return "cuda"
         elif hasattr(torch.backends, 'mps') and torch.backends.mps.is_available():
@@ -192,7 +194,7 @@ class Qwen3Wrapper:
 
     def _load_cuda_model(self):
         """Load model optimized for CUDA with 4-bit quantization"""
-        gpu_memory = torch.cuda.get_device_properties(0).total_mem / (1024**3)
+        gpu_memory = torch.cuda.get_device_properties(0).total_memory / (1024**3)
         self.logger.info(f"Available GPU memory: {gpu_memory:.1f}GB")
 
         attn_impl = self._select_attention()
@@ -370,7 +372,7 @@ class Qwen3Wrapper:
 
             # Only clear VRAM cache if critically full
             if self.device == "cuda" and torch.cuda.is_available():
-                usage = torch.cuda.memory_allocated() / torch.cuda.get_device_properties(0).total_mem
+                usage = torch.cuda.memory_allocated() / torch.cuda.get_device_properties(0).total_memory
                 if usage > 0.95:
                     torch.cuda.empty_cache()
                     self.logger.info(f"Cleared cache: {usage:.0%} VRAM used")
@@ -417,7 +419,7 @@ class Qwen3Wrapper:
             info.update({
                 "gpu_memory_allocated_gb": torch.cuda.memory_allocated() / 1024**3,
                 "gpu_memory_reserved_gb": torch.cuda.memory_reserved() / 1024**3,
-                "gpu_memory_usage_pct": (torch.cuda.memory_allocated() / torch.cuda.get_device_properties(0).total_mem) * 100
+                "gpu_memory_usage_pct": (torch.cuda.memory_allocated() / torch.cuda.get_device_properties(0).total_memory) * 100
             })
 
         return info

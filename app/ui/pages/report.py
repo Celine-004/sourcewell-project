@@ -11,7 +11,8 @@ project_root = Path(__file__).parent.parent.parent.parent
 sys.path.insert(0, str(project_root))
 
 try:
-    from llm.phi3_engine import Phi3MiniEngine
+    # from llm.phi3_engine import Phi3MiniEngine
+    from llm.qwen3_engine import Qwen3Engine
     from llm.citation_verifier import CitationVerifier
     AI_AVAILABLE = True
 except ImportError as e:
@@ -48,8 +49,10 @@ def render(interface):
     if 'ai_engine' not in st.session_state or st.session_state.ai_engine is None:
         with st.spinner("🤖 Initializing AI engine..."):
             try:
-                from llm.phi3_engine import Phi3MiniEngine
-                ai_engine = Phi3MiniEngine()
+                # from llm.phi3_engine import Phi3MiniEngine
+                # ai_engine = Phi3MiniEngine()
+                from llm.qwen3_engine import Qwen3Engine
+                ai_engine = Qwen3Engine()
                 st.session_state.ai_engine = ai_engine
                 st.info("✅ AI engine created (will initialize on first use)")
             except Exception as e:
