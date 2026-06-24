@@ -281,16 +281,24 @@ class Phi3MiniEngine:
                 context = "Based on medical guidelines and evidence-based practices."
                 sources = []
             
-            # Build prompt with context
-            prompt = self.prompt_templates.build_explanation_prompt(
+            # Build prompts
+            system_prompt = self.prompt_templates.build_system_prompt(explanation_type)
+            report_prompt = self.prompt_templates.build_report_prompt(
                 patient_data=patient_data,
                 risk_results=risk_results,
                 context={'sources': sources, 'context': context},
                 explanation_type=explanation_type
             )
             
-            # Generate explanation
-            explanation = self.model_wrapper.generate(prompt, max_new_tokens=500)
+            # Generate explanation using chat template
+            explanation = self.model_wrapper.generate_with_system_prompt(
+                system_prompt=system_prompt,
+                user_prompt=report_prompt,
+                max_new_tokens=500
+            )
+            
+            # DEBUG: see raw output before verification
+            print(f"\n\nRAW MODEL OUTPUT:\n{'='*60}\n{explanation}\n{'='*60}\n\n")
             
             verification_result = None
             verification_score = 1.0
