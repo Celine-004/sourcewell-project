@@ -42,13 +42,23 @@ class SourceWellConfig:
     DEFAULT_BITSANDBYTES_VERSION = "0.41"
 
     #model configuration pakages
-    DEFAULT_AI_MODEL_ID = "microsoft/Phi-3-mini-4k-instruct"
+    DEFAULT_AI_MODEL_ID = "Qwen/Qwen3-4B"
     DEFAULT_EMBEDDING_MODEL_ID = "sentence-transformers/all-MiniLM-L6-v2"
     ENABLE_MODEL_PREDOWNLOAD = True
 
     # Windows fallback for bitsandbytes
     WINDOWS_BITSANDBYTES_WHEEL = "https://github.com/jllllll/bitsandbytes-windows-webui/releases/download/wheels/bitsandbytes-0.41.1-py3-none-win_amd64.whl"
-    
+
+    @property
+    def ai_model_name(self):
+        """Human-readable model name derived from model ID"""
+        return self.DEFAULT_AI_MODEL_ID.split("/")[-1]
+
+    @property
+    def ai_model_cache_dir(self):
+        """Cache directory name for HuggingFace hub"""
+        return f"models--{self.DEFAULT_AI_MODEL_ID.replace('/', '--')}"
+        
     # PyTorch CUDA compatibility matrix (actual available wheels)
     PYTORCH_CUDA_COMPATIBILITY = {
         "2.5.1": ["121", "118"],
@@ -756,7 +766,7 @@ class SourceWellInstaller:
                     
             except Exception as e:
                 print(f" AI optimization warning: {e}")
-                print("   Phi-3 Mini will run without quantization (higher VRAM usage)")
+                print("   {self.config.ai_model_name} will run without quantization (higher VRAM usage)")
                 results['ai_optimization'] = True  # Don't fail installation for optional features
         else:
             if not torch_available:
@@ -809,8 +819,8 @@ class SourceWellInstaller:
         
         success_count = 0
         
-        # Download Phi-3 Mini (~7.6GB)
-        if self._download_phi3_model():
+        # Download AI model
+        if self._download_ai_model():
             success_count += 1
         
         # Download embedding model (~90MB)  
@@ -820,10 +830,11 @@ class SourceWellInstaller:
         print(f" {success_count}/2 AI models downloaded")
         return True  # Don't fail installation for model issues
 
-    def _download_phi3_model(self) -> bool:
-        """Download Phi-3 Mini with proper caching."""
+    def _download_ai_model(self) -> bool:
+        """Download AI model with proper caching."""
         model_id = self.config.get_ai_model_id()
-        print(f"    Downloading {model_id} (~7.6GB)")
+        model_name = self.config.ai_model_name
+        print(f"    Downloading {model_id}")
         
         try:
             from transformers import AutoModelForCausalLM, AutoTokenizer
@@ -862,10 +873,10 @@ class SourceWellInstaller:
                 low_cpu_mem_usage=True,
                 cache_dir=cache_dir
             )
-            print("    ✓ Phi-3 Mini model cached successfully")
+            print(f"    ✓ {self.config.ai_model_name} cached successfully")
             
             # Verify the cache exists
-            model_cache_path = Path(cache_dir) / "models--microsoft--Phi-3-mini-4k-instruct"
+            model_cache_path = Path(cache_dir) / self.config.ai_model_cache_dir
             if model_cache_path.exists():
                 # List cached files for verification
                 print("    Cached model files:")
@@ -1106,10 +1117,10 @@ def main():
         
         # Download models
         success = True
-        if installer._download_phi3_model():
-            print("✅ Phi-3 Mini downloaded successfully")
+        if installer._download_ai_model():
+            print(f"✅ {installer.config.ai_model_name} downloaded successfully")
         else:
-            print("❌ Phi-3 Mini download failed")
+            print(f"❌ {installer.config.ai_model_name} download failed")
             success = False
         
         if installer._download_embedding_model():
