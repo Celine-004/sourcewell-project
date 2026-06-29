@@ -144,7 +144,8 @@ class Qwen3Engine:
     def generate_explanation(self, patient_data: Dict, risk_results: Dict,
                             explanation_type: str = "general",
                             include_citations: bool = True,
-                            strict_verification: bool = False) -> Dict[str, Any]:
+                            strict_verification: bool = False,
+                            detailed: bool = False) -> Dict[str, Any]:
         """Generate AI explanation with RAG support"""
 
         if self.model_wrapper is None:
@@ -192,14 +193,16 @@ class Qwen3Engine:
                 patient_data=patient_data,
                 risk_results=risk_results,
                 context={'sources': sources, 'context': context},
-                explanation_type=explanation_type
+                explanation_type=explanation_type,
+                detailed=detailed
             )
 
             # Generate with chat template
+            max_tokens = 768 if detailed else 512
             explanation = self.model_wrapper.generate_with_system_prompt(
                 system_prompt=system_prompt,
                 user_prompt=report_prompt,
-                max_new_tokens=512
+                max_new_tokens=max_tokens
             )
 
             # Citation verification

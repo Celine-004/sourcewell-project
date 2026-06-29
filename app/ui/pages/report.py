@@ -184,7 +184,8 @@ def generate_explanation_safe(
             patient_data=patient_dict,
             risk_results=risk_results,
             explanation_type=explanation_type,
-            include_citations=include_citations and verify_claims
+            include_citations=include_citations and verify_claims,
+            detailed=detailed_analysis
         )
         
         progress_bar.progress(0.8)

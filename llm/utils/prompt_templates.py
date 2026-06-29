@@ -48,7 +48,8 @@ class PromptTemplates:
         patient_data: Dict[str, Any],
         risk_results: Dict[str, Any],
         context: Dict[str, Any],
-        explanation_type: str = "general"
+        explanation_type: str = "general",
+        detailed: bool = False
     ) -> str:
         """Build the report task prompt with patient data, results, and evidence"""
 
@@ -99,7 +100,14 @@ MEDICAL EVIDENCE:
 
 TASK: {task}
 
-Write 2-4 paragraphs. Do not use bullet points or numbered lists."""
+{
+    'Write 4-6 detailed paragraphs. Provide thorough analysis of each risk factor, '
+    'explain the underlying mechanisms, and give specific numerical targets where '
+    'appropriate (e.g., blood pressure below 130/80, HbA1c below 5.7%). '
+    'Do not use bullet points or numbered lists.'
+    if detailed else
+    'Write 2-4 paragraphs. Do not use bullet points or numbered lists.'
+}"""
 
     def _get_source_config(self, explanation_type: str) -> dict:
         """Source count and depth per explanation type"""
