@@ -54,33 +54,40 @@ class PromptTemplates:
 
         patient_summary = self._extract_patient_summary(patient_data)
         risk_summary = self._extract_risk_summary(risk_results)
-        evidence_context = self._extract_evidence_context(context)
+        evidence_context = self._extract_evidence_context(context, explanation_type)
 
         if explanation_type == "diabetes":
             task = (
-                "The patient has already seen their FINDRISC score and risk percentage. "
-                "Explain what these results mean for them personally, "
-                "which of their factors contribute most, "
-                "what evidence-based steps they can take, and when to follow up."
+                "Focus only on the patient's diabetes risk. Do not discuss cardiovascular "
+                "or colorectal results. Explain what their FINDRISC score means in practical "
+                "terms and identify which of their specific risk factors have the biggest impact "
+                "on their diabetes risk. Recommend specific, actionable prevention steps based "
+                "on the provided evidence, such as dietary changes, exercise targets, or monitoring "
+                "frequency. Reference the evidence sources when making recommendations."
             )
         elif explanation_type == "cardiovascular":
             task = (
-                "The patient has already seen their Framingham risk percentage. "
-                "Explain what this means for them personally, "
-                "which risk factors they can change, "
-                "evidence-based prevention strategies, and when to consider further action."
+                "Focus only on the patient's cardiovascular risk. Do not discuss diabetes "
+                "or colorectal results. Explain what their Framingham 10-year risk percentage "
+                "means for someone in their situation and identify which risk factors are driving "
+                "their score and which they can modify. Recommend specific actions they can take "
+                "based on the provided evidence. Reference the evidence sources when making "
+                "recommendations."
             )
         elif explanation_type == "colorectal":
             task = (
-                "The patient has already seen their colorectal screening recommendation. "
-                "Explain what this means for them, "
-                "what screening options are available, and recommended timing."
+                "Focus only on colorectal cancer screening. Do not discuss diabetes or "
+                "cardiovascular results. Explain what their risk level means for screening "
+                "urgency and describe the available screening methods with their advantages. "
+                "Recommend when they should start or continue screening based on their age "
+                "and risk factors, referencing the provided evidence."
             )
         else:
             task = (
-                "The patient has already seen their individual risk scores. "
-                "Explain how these results relate to each other, "
-                "what the overall picture means, and the most important next steps."
+                "Provide an integrated overview of all the patient's results. Explain how "
+                "their risks relate to each other, especially shared risk factors that affect "
+                "multiple areas. Identify the most impactful change they could make and "
+                "which result needs the most immediate attention."
             )
 
         return f"""PATIENT: {patient_summary}
@@ -93,6 +100,38 @@ MEDICAL EVIDENCE:
 TASK: {task}
 
 Write 2-4 paragraphs. Do not use bullet points or numbered lists."""
+
+    def _get_source_config(self, explanation_type: str) -> dict:
+        """Source count and depth per explanation type"""
+        configs = {
+            "diabetes": {"count": 3, "chars": 800},
+            "cardiovascular": {"count": 4, "chars": 700},
+            "colorectal": {"count": 3, "chars": 800},
+            "general": {"count": 5, "chars": 500},
+        }
+        return configs.get(explanation_type, {"count": 3, "chars": 800})
+
+    def _extract_evidence_context(self, context: Dict[str, Any], explanation_type: str = "general") -> str:
+        """Extract evidence from knowledge base — dynamic per type"""
+        sources = context.get('sources', [])
+        config = self._get_source_config(explanation_type)
+
+        if not sources:
+            return "Limited evidence available in the knowledge base for this query."
+
+        evidence_parts = []
+        for i, source in enumerate(sources[:config['count']]):
+            title = source.get('title', 'Unknown source')
+            content = source.get('content', '')[:config['chars']]
+            organization = source.get('organization', '')
+
+            header = f"[{title}]"
+            if organization:
+                header += f" ({organization})"
+
+            evidence_parts.append(f"{header}\n{content}")
+
+        return "\n\n".join(evidence_parts)
 
     def _extract_patient_summary(self, patient_data: Dict[str, Any]) -> str:
         """Extract relevant patient information"""
@@ -112,7 +151,7 @@ Write 2-4 paragraphs. Do not use bullet points or numbered lists."""
 
         summary = f"{age}-year-old {gender}, BMI {bmi}"
         if risk_factors:
-            summary += f", risk factors: {', '.join(risk_factors)}"
+            summary += f". Risk factors: {', '.join(risk_factors)}"
 
         return summary
 
@@ -171,20 +210,3 @@ Write 2-4 paragraphs. Do not use bullet points or numbered lists."""
                     summaries.append(f"Colorectal cancer risk: {risk_level} risk level")
 
         return "; ".join(summaries) if summaries else "No risk calculations available"
-
-    def _extract_evidence_context(self, context: Dict[str, Any]) -> str:
-        """Extract evidence from knowledge base"""
-        sources = context.get('sources', [])
-
-        if not sources:
-            return "No evidence sources available."
-
-        evidence_parts = []
-        for i, source in enumerate(sources[:3]):
-            title = source.get('title', 'Unknown source')
-            content = source.get('content', '')[:800]
-            organization = source.get('organization', 'Unknown')
-
-            evidence_parts.append(f"[{i+1}] {title} ({organization}):\n{content}")
-
-        return "\n\n".join(evidence_parts)

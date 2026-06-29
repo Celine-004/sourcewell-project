@@ -252,36 +252,25 @@ class CitationVerifier:
         except Exception as e:
             self.logger.error(f"Semantic matching failed: {e}")
             return {'confidence': 0.0, 'source': None}
-    
+
     def _generate_cleaned_explanation(
         self,
         original_explanation: str,
         flagged_sentences: List[str],
         strict_mode: bool
     ) -> str:
-        """Generate cleaned explanation by handling unsupported claims"""
-        
-        if not flagged_sentences:
+        """Return explanation — only remove unsupported claims in strict mode"""
+
+        if not flagged_sentences or not strict_mode:
             return original_explanation
-        
+
+        # Only in strict mode: remove unsupported sentences
         cleaned = original_explanation
-        
         for flagged_sentence in flagged_sentences:
-            if strict_mode:
-                # Remove unsupported sentences in strict mode
-                cleaned = cleaned.replace(flagged_sentence, "")
-            else:
-                # Add hedging language in normal mode
-                hedged = f"Based on available information, {flagged_sentence.lower()}"
-                cleaned = cleaned.replace(flagged_sentence, hedged)
-        
-        # Clean up extra whitespace and punctuation
+            cleaned = cleaned.replace(flagged_sentence, "")
+
+        # Clean up extra whitespace
         cleaned = re.sub(r'\s+', ' ', cleaned)
         cleaned = re.sub(r'\s*[.!?]\s*[.!?]\s*', '. ', cleaned)
-        
-        # Add verification disclaimer
-        if flagged_sentences:
-            disclaimer = "\n\n*Note: Some claims have limited supporting evidence in our knowledge base. Please consult healthcare providers for complete medical guidance.*"
-            cleaned += disclaimer
-        
+
         return cleaned.strip()

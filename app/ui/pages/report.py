@@ -184,7 +184,7 @@ def generate_explanation_safe(
             patient_data=patient_dict,
             risk_results=risk_results,
             explanation_type=explanation_type,
-            include_citations=include_citations
+            include_citations=include_citations and verify_claims
         )
         
         progress_bar.progress(0.8)
@@ -193,22 +193,8 @@ def generate_explanation_safe(
             st.error(f"❌ Explanation generation failed: {explanation_result.get('error', 'Unknown error')}")
             return
         
-        # Step 3: Verify claims if requested
-        if verify_claims:
-            status_text.text("🔍 Verifying medical claims...")
-            try:
-                from llm.citation_verifier import CitationVerifier
-                verifier = CitationVerifier()
-                
-                verification_result = verifier.verify_explanation(
-                    explanation_result['explanation'],
-                    explanation_result.get('citations', []),
-                    strict_mode=False
-                )
-                
-                explanation_result['verification'] = verification_result
-            except Exception as verify_error:
-                st.warning(f"⚠️ Claim verification failed: {verify_error}")
+        # Verification already handled inside engine
+        status_text.text("🔍 Verifying medical claims...")
         
         progress_bar.progress(1.0)
         status_text.text("✅ Analysis complete!")
@@ -239,93 +225,86 @@ def generate_explanation_safe(
 
 def display_ai_explanations(explanations: Dict[str, Any], show_verification: bool = True):
     """Display generated AI explanations"""
-    
+
     st.subheader("📄 Generated Explanations")
-    
+
     for explanation_type, result in explanations.items():
         with st.expander(f"📊 {explanation_type.title()} Explanation", expanded=True):
-            
+
             if not result.get('success'):
                 st.error(f"Failed to generate {explanation_type} explanation")
                 continue
-            
+
             # Main explanation text
             explanation_text = result['explanation']
-            
-            # Use verified explanation if available
-            if show_verification and result.get('verification', {}).get('success'):
-                verification = result['verification']
-                if verification.get('cleaned_explanation'):
-                    explanation_text = verification['cleaned_explanation']
-            
+
             st.markdown("### 📝 Explanation")
             st.markdown(explanation_text)
-            
+
             # Metadata
             col1, col2, col3 = st.columns(3)
-            
+
             with col1:
                 confidence = result.get('confidence', 0)
                 st.metric("Confidence", f"{confidence:.1%}")
-            
+
             with col2:
                 sources_count = result.get('context_sources', 0)
                 st.metric("Evidence Sources", sources_count)
-            
+
             with col3:
-                if show_verification and result.get('verification'):
-                    verification = result['verification']
-                    verification_score = verification.get('verification_score', 0)
+                if show_verification:
+                    verification_score = result.get('verification_score', 0)
                     st.metric("Verification Score", f"{verification_score:.1%}")
-            
+
             # Citations
             citations = result.get('citations', [])
             if citations:
                 st.markdown("### 📚 Citations & Evidence")
-                
-                for citation in citations[:5]:  # Show top 5 citations
+
+                for citation in citations:
                     with st.container():
                         title = citation.get('title', 'Unknown source')
                         organization = citation.get('organization', '')
                         evidence_grade = citation.get('evidence_grade', '')
                         url = citation.get('url', '')
-                        
+
                         citation_text = f"**{title}**"
                         if organization:
                             citation_text += f" - *{organization}*"
                         if evidence_grade:
                             citation_text += f" (Evidence Grade: {evidence_grade})"
-                        
+
                         st.markdown(citation_text)
-                        
+
                         if url:
                             st.markdown(f"[View Source]({url})")
-                        
+
                         st.markdown("---")
-            
-            # Verification details (if enabled)
-            if show_verification and result.get('verification', {}).get('success'):
-                verification = result['verification']
-                
+
+            # Verification details
+            if show_verification and result.get('verification_details', {}).get('success'):
+                details = result['verification_details']
+
                 with st.expander("🔍 Claim Verification Details"):
-                    total_claims = verification.get('total_claims', 0)
-                    supported_claims = verification.get('supported_claims', 0)
-                    flagged_sentences = verification.get('flagged_sentences', [])
-                    
+                    total_claims = details.get('total_claims', 0)
+                    supported_claims = details.get('supported_claims', 0)
+                    flagged_sentences = result.get('flagged_sentences', [])
+
                     col1, col2 = st.columns(2)
-                    
+
                     with col1:
                         st.metric("Total Medical Claims", total_claims)
                         st.metric("Supported Claims", supported_claims)
-                    
+
                     with col2:
                         if flagged_sentences:
                             st.warning(f"⚠️ {len(flagged_sentences)} claims need verification")
-                            for sentence in flagged_sentences[:3]:  # Show first 3
+                            for sentence in flagged_sentences[:3]:
                                 st.caption(f"• {sentence}")
                         else:
                             st.success("✅ All claims verified")
-            
+
             # Download option
             if st.button(f"📥 Download {explanation_type.title()} Report", key=f"download_{explanation_type}"):
                 report_content = generate_downloadable_report(explanation_type, result)

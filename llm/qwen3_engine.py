@@ -243,12 +243,16 @@ class Qwen3Engine:
                 verification_score = 1.0
                 self.logger.info("No verification: citations disabled")
 
+            # Limit sources to what the model actually used
+            source_config = self.prompt_templates._get_source_config(explanation_type)
+            used_sources = sources[:source_config['count']]
+
             return {
                 'success': True,
                 'explanation': explanation,
-                'citations': sources,
-                'confidence': verification_score,
-                'context_sources': len(sources),
+                'citations': used_sources,
+                'confidence': min(len(sources), source_config['count']) / source_config['count'],
+                'context_sources': len(used_sources),
                 'verification_score': verification_score,
                 'flagged_sentences': flagged_sentences,
                 'verification_details': verification_result
