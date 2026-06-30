@@ -377,6 +377,9 @@ class Qwen3Wrapper:
                     torch.cuda.empty_cache()
                     self.logger.info(f"Cleared cache: {usage:.0%} VRAM used")
 
+            # Clean any non-English characters
+            import re
+            response = re.sub(r'[^\x00-\x7F\u2018\u2019\u201C\u201D\u2013\u2014\u2026°±²³]+', '', response)
             return response.strip()
 
         except Exception as e:

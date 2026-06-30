@@ -301,6 +301,63 @@ class Qwen3Engine:
             self.logger.error(f"Summary generation failed: {e}")
             return self._generate_basic_summary(risk_results)
 
+    def generate_coaching_response(self, user_message: str, patient_data: Dict,
+                                    risk_results: Dict, chat_history: list = None) -> str:
+        """Generate a coaching chat response grounded in patient context"""
+        try:
+            if self.model_wrapper is None or not self.model_wrapper.is_loaded:
+                if not self.initialize():
+                    return "AI engine is not available. Please try again."
+
+            # Build context from patient data
+            risk_parts = self._extract_result_parts(risk_results)
+            risk_summary = ", ".join(risk_parts) if risk_parts else "No results available"
+
+            age = patient_data.get('age', '')
+            gender = patient_data.get('gender', '')
+            bmi = patient_data.get('bmi', '')
+            patient_summary = f"{age}-year-old {gender}, BMI {bmi}"
+            
+            system_prompt = (
+                "You are a clinical preventive health advisor responding to a patient's question. "
+                "You have access to their health assessment results. Maintain a professional, "
+                "direct tone — informative without being casual. Reference specific guidelines "
+                "and clinical evidence where appropriate. Keep responses to 2-3 paragraphs. "
+                "Do not diagnose or prescribe medication. Redirect out-of-scope questions "
+                "to their healthcare provider."
+            )
+
+            # Build conversation context
+            context = f"PATIENT: {patient_summary}\nRESULTS: {risk_summary}"
+
+            if chat_history and len(chat_history) > 0:
+                # Include last 4 exchanges for context
+                recent = chat_history[-8:]
+                history_text = "\n".join(
+                    f"{'Patient' if msg['role'] == 'user' else 'Coach'}: {msg['content']}"
+                    for msg in recent
+                )
+                user_prompt = f"{context}\n\nCONVERSATION SO FAR:\n{history_text}\n\nPatient: {user_message}"
+            else:
+                user_prompt = f"{context}\n\nPatient: {user_message}"
+
+            response = self.model_wrapper.generate_with_system_prompt(
+                system_prompt=system_prompt,
+                user_prompt=user_prompt,
+                max_new_tokens=300,
+                temperature=0.7
+            )
+            
+            # Clean any non-English characters that may leak from model
+            import re
+            response = re.sub(r'[^\x00-\x7F\u2018\u2019\u201C\u201D\u2013\u2014\u2026°±²³]+', '', response)
+
+            return response.strip()
+
+        except Exception as e:
+            self.logger.error(f"Coaching response failed: {e}")
+            return "I'm sorry, I couldn't generate a response. Please try again."
+
     def _build_search_query(self, explanation_type: str) -> str:
         """Build search query based on explanation type"""
         queries = {

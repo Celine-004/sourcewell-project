@@ -127,6 +127,71 @@ def render(interface):
             mime="text/plain"
         )
 
+    # AI Coaching Chat
+    st.markdown("---")
+    st.subheader("💬 Ask Your Health Coach")
+    st.caption("Ask questions about your results, lifestyle changes, or next steps.")
+
+    # Initialize chat history
+    if 'coaching_chat' not in st.session_state:
+        st.session_state.coaching_chat = []
+
+    # Display chat history
+    for msg in st.session_state.coaching_chat:
+        if msg['role'] == 'user':
+            st.chat_message("user").write(msg['content'])
+        else:
+            st.chat_message("assistant").write(msg['content'])
+
+    # Chat input
+    user_input = st.chat_input("Ask about your health results...")
+
+    if user_input:
+        # Display user message
+        st.chat_message("user").write(user_input)
+        st.session_state.coaching_chat.append({"role": "user", "content": user_input})
+
+        # Get AI response
+        with st.spinner("Thinking..."):
+            try:
+                # Get or create engine
+                if 'ai_engine' not in st.session_state or st.session_state.ai_engine is None:
+                    from llm.qwen3_engine import Qwen3Engine
+                    engine = Qwen3Engine()
+                    engine.initialize()
+                    st.session_state.ai_engine = engine
+                else:
+                    engine = st.session_state.ai_engine
+
+                if not engine.model_wrapper.is_loaded:
+                    engine.initialize()
+
+
+                # Convert patient_data if needed
+                if hasattr(patient_data, 'to_calculator_dict'):
+                    patient_dict = patient_data.to_calculator_dict()
+                else:
+                    patient_dict = vars(patient_data) if hasattr(patient_data, '__dict__') else {}
+
+                response = engine.generate_coaching_response(
+                    user_message=user_input,
+                    patient_data=patient_dict,
+                    risk_results=risk_results,
+                    chat_history=st.session_state.coaching_chat
+                )
+
+                st.chat_message("assistant").write(response)
+                st.session_state.coaching_chat.append({"role": "assistant", "content": response})
+
+            except Exception as e:
+                st.error(f"Failed to generate response: {e}")
+
+    # Clear chat button
+    if st.session_state.coaching_chat:
+        if st.button("🗑️ Clear Chat"):
+            st.session_state.coaching_chat = []
+            st.rerun()
+
 def display_risk_summary_coaching(risk_results: Dict[str, Any]):
     """Display risk summary for coaching context"""
     
