@@ -22,53 +22,54 @@ class PatientDataCollector:
     def collect_basic_info(self) -> Dict[str, Any]:
         """Collect Tier 1 basic information"""
         st.subheader("📋 Basic Information")
-        
+
         col1, col2 = st.columns(2)
-        
+
         with col1:
             age = st.number_input(
                 "Age (years)",
                 min_value=18,
                 max_value=100,
-                value=45,
+                value=self._get_saved('age', 45),
                 help="Age must be between 18-100 years"
             )
-            
+
             gender = st.selectbox(
                 "Biological Sex",
                 options=["male", "female"],
+                index=["male", "female"].index(self._get_saved('gender', 'male')),
                 help="Required for risk calculations"
             )
-            
+
             height_cm = st.number_input(
                 "Height (cm)",
                 min_value=100.0,
                 max_value=250.0,
-                value=170.0,
+                value=float(self._get_saved('height_cm', 170.0)),
                 step=0.1
             )
-        
+
         with col2:
             weight_kg = st.number_input(
                 "Weight (kg)",
                 min_value=30.0,
                 max_value=300.0,
-                value=70.0,
+                value=float(self._get_saved('weight_kg', 70.0)),
                 step=0.1
             )
-            
+
             physical_activity = st.checkbox(
                 "Regular Physical Activity",
-                value=True,
+                value=self._get_saved('physical_activity', True),
                 help="At least 150 minutes moderate activity per week"
             )
-            
+
             vegetable_fruit_daily = st.checkbox(
                 "Daily Fruits & Vegetables",
-                value=True,
+                value=self._get_saved('vegetable_fruit_daily', True),
                 help="5+ servings per day"
             )
-        
+
         return {
             "age": age,
             "gender": gender,
@@ -78,56 +79,62 @@ class PatientDataCollector:
             "vegetable_fruit_daily": vegetable_fruit_daily
         }
     
+    def _get_saved(self, key, default=None):
+        """Get previously saved value from form_data"""
+        form_data = st.session_state.get('form_data', {})
+        return form_data.get(key, default)
+
+
     def collect_clinical_data(self) -> Dict[str, Any]:
         """Collect Tier 2 clinical measurements"""
         st.subheader("🩺 Clinical Measurements")
-        
+
         col1, col2 = st.columns(2)
-        
+
         with col1:
             st.markdown("**Blood Pressure**")
             systolic_bp = st.number_input(
                 "Systolic (mmHg)",
                 min_value=70,
                 max_value=250,
-                value=120,
+                value=self._get_saved('systolic_bp', 120),
                 help="Top number in blood pressure reading"
             )
-            
+
             diastolic_bp = st.number_input(
                 "Diastolic (mmHg)",
                 min_value=40,
                 max_value=150,
-                value=80,
+                value=self._get_saved('diastolic_bp', 80),
                 help="Bottom number in blood pressure reading"
             )
-            
+
             waist_circumference = st.number_input(
                 "Waist Circumference (cm)",
                 min_value=40,
                 max_value=200,
-                value=85,
+                value=self._get_saved('waist_circumference', 85),
                 help="Measured at narrowest point"
             )
-        
+
         with col2:
             st.markdown("**Cholesterol Levels**")
             total_cholesterol = st.number_input(
                 "Total Cholesterol (mg/dL)",
                 min_value=100,
                 max_value=500,
-                value=200,
+                value=self._get_saved('total_cholesterol', 200),
                 help="From recent blood test"
             )
-            
+
             hdl_cholesterol = st.number_input(
                 "HDL Cholesterol (mg/dL)",
                 min_value=15,
                 max_value=100,
-                value=50,
+                value=self._get_saved('hdl_cholesterol', 50),
                 help="'Good' cholesterol level"
             )
-        
+
         return {
             "systolic_bp": systolic_bp,
             "diastolic_bp": diastolic_bp,
@@ -135,52 +142,53 @@ class PatientDataCollector:
             "total_cholesterol": total_cholesterol,
             "hdl_cholesterol": hdl_cholesterol
         }
+
     
     def collect_medical_history(self) -> Dict[str, Any]:
         """Collect Tier 3 medical and family history"""
         st.subheader("🧬 Medical & Family History")
-        
+
         col1, col2 = st.columns(2)
-        
+
         with col1:
             st.markdown("**Personal Medical History**")
-            diabetes_diagnosed = st.checkbox("Diagnosed with Diabetes")
-            high_glucose_history = st.checkbox("Previous High Blood Sugar")
-            hypertension_medication = st.checkbox("Blood Pressure Medication")
-            current_smoker = st.checkbox("Current Smoker")
-            
+            diabetes_diagnosed = st.checkbox("Diagnosed with Diabetes", value=self._get_saved('diabetes_diagnosed', False))
+            high_glucose_history = st.checkbox("Previous High Blood Sugar", value=self._get_saved('high_glucose_history', False))
+            hypertension_medication = st.checkbox("Blood Pressure Medication", value=self._get_saved('hypertension_medication', False))
+            current_smoker = st.checkbox("Current Smoker", value=self._get_saved('current_smoker', False))
+
             st.markdown("**Cancer Screening History**")
-            personal_history_polyps = st.checkbox("History of Polyps")
-            inflammatory_bowel_disease = st.checkbox("Inflammatory Bowel Disease")
-            high_risk_syndrome = st.checkbox("High Risk Genetic Syndrome")
-        
+            personal_history_polyps = st.checkbox("History of Polyps", value=self._get_saved('personal_history_polyps', False))
+            inflammatory_bowel_disease = st.checkbox("Inflammatory Bowel Disease", value=self._get_saved('inflammatory_bowel_disease', False))
+            high_risk_syndrome = st.checkbox("High Risk Genetic Syndrome", value=self._get_saved('high_risk_syndrome', False))
+
         with col2:
             st.markdown("**Family History**")
+
+            diabetes_options = ["none", "grandparent_aunt_uncle_cousin", "parent_sibling_child"]
+            saved_diabetes = self._get_saved('family_diabetes_history', 'none')
             family_diabetes_history = st.selectbox(
                 "Family Diabetes History",
-                options=[
-                    "none",
-                    "grandparent_aunt_uncle_cousin", 
-                    "parent_sibling_child"
-                ],
+                options=diabetes_options,
+                index=diabetes_options.index(saved_diabetes) if saved_diabetes in diabetes_options else 0,
                 format_func=lambda x: {
                     "none": "No Family History",
                     "grandparent_aunt_uncle_cousin": "Grandparent/Aunt/Uncle/Cousin",
                     "parent_sibling_child": "Parent/Sibling/Child"
                 }[x]
             )
-            
-            family_colorectal_cancer = st.checkbox("Family Colorectal Cancer")
-            
+
+            family_colorectal_cancer = st.checkbox("Family Colorectal Cancer", value=self._get_saved('family_colorectal_cancer', False))
+
             family_colorectal_age = None
             if family_colorectal_cancer:
                 family_colorectal_age = st.number_input(
                     "Age at Family Member's Diagnosis",
                     min_value=20,
                     max_value=100,
-                    value=60
+                    value=self._get_saved('family_colorectal_age', 60)
                 )
-        
+
         return {
             "diabetes_diagnosed": diabetes_diagnosed,
             "high_glucose_history": high_glucose_history,
@@ -193,6 +201,7 @@ class PatientDataCollector:
             "family_colorectal_cancer": family_colorectal_cancer,
             "family_colorectal_age": family_colorectal_age
         }
+
     
     def validate_and_create_patient_data(self, data: Dict[str, Any]) -> Optional[PatientData]:
         """Validate collected data and create PatientData instance"""

@@ -62,6 +62,15 @@ def render(interface):
                 
                 if results:
                     st.session_state.risk_results = results
+                                        # Save to database
+                    if 'db' in st.session_state and 'session_id' in st.session_state:
+                        try:
+                            st.session_state.db.save_risk_results(
+                                st.session_state.session_id, results
+                            )
+                        except Exception:
+                            pass  # Risk results may not be fully serializable
+
                     st.success("✅ Risk assessment completed!")
                 else:
                     st.error("❌ Failed to run risk assessment")

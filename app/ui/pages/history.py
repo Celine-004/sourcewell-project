@@ -57,6 +57,17 @@ def render(interface):
             if patient_data:
                 # Store in session state
                 st.session_state.patient_data = patient_data
+                # Save to database
+                if 'db' in st.session_state and 'session_id' in st.session_state:
+                    if hasattr(patient_data, 'to_calculator_dict'):
+                        st.session_state.db.save_patient_data(
+                            st.session_state.session_id, patient_data.to_calculator_dict()
+                        )
+                    elif hasattr(patient_data, '__dict__'):
+                        st.session_state.db.save_patient_data(
+                            st.session_state.session_id, vars(patient_data)
+                        )
+
                 st.success("✅ Data validated successfully!")
                 
                 # Show summary

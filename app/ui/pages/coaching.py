@@ -134,7 +134,11 @@ def render(interface):
 
     # Initialize chat history
     if 'coaching_chat' not in st.session_state:
-        st.session_state.coaching_chat = []
+        if 'db' in st.session_state and 'session_id' in st.session_state:
+            history = st.session_state.db.get_chat_history(st.session_state.session_id)
+            st.session_state.coaching_chat = [{"role": h["role"], "content": h["content"]} for h in history]
+        else:
+            st.session_state.coaching_chat = []
 
     # Display chat history
     for msg in st.session_state.coaching_chat:
@@ -150,6 +154,10 @@ def render(interface):
         # Display user message
         st.chat_message("user").write(user_input)
         st.session_state.coaching_chat.append({"role": "user", "content": user_input})
+        if 'db' in st.session_state and 'session_id' in st.session_state:
+            st.session_state.db.save_chat_message(
+                st.session_state.session_id, "user", user_input
+            )
 
         # Get AI response
         with st.spinner("Thinking..."):
@@ -182,6 +190,10 @@ def render(interface):
 
                 st.chat_message("assistant").write(response)
                 st.session_state.coaching_chat.append({"role": "assistant", "content": response})
+                if 'db' in st.session_state and 'session_id' in st.session_state:
+                    st.session_state.db.save_chat_message(
+                        st.session_state.session_id, "assistant", response
+                    )
 
             except Exception as e:
                 st.error(f"Failed to generate response: {e}")
@@ -672,6 +684,8 @@ def generate_action_plan_document(patient_data, risk_results, priority_actions, 
     
     # Add risk summaries
     for calc_name, result in risk_results.items():
+        if not isinstance(result, dict):
+            continue
         if result.get('success'):
             data = result.get('result', {})
             if calc_name == 'findrisc':

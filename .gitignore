@@ -257,3 +257,5 @@ exports/
 Thumbs.db
 desktop.ini
 sourcewell_config.json
+.db/
+.data/
