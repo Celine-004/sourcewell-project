@@ -39,7 +39,7 @@ Markdown Files → Validation → Citation Generation → Weaviate Storage → S
 
 ### Prerequisites
 
-- Python 3.8+
+- Python 3.12+
 - Docker (for Weaviate)
 - 4GB+ available RAM
 
@@ -85,7 +85,7 @@ docker run -d \
   -e PERSISTENCE_DATA_PATH=/var/lib/weaviate \
   -e DEFAULT_VECTORIZER_MODULE=none \
   -e ENABLE_MODULES=text2vec-openai,text2vec-cohere,text2vec-huggingface,ref2vec-centroid,generative-openai,qna-openai \
-  semitechnologies/weaviate:1.22.4
+  semitechnologies/weaviate:1.24.1
 
 # Verify Weaviate is running
 curl http://localhost:8080/v1/meta
@@ -103,7 +103,7 @@ docker run -d ^
   -e PERSISTENCE_DATA_PATH=/var/lib/weaviate ^
   -e DEFAULT_VECTORIZER_MODULE=none ^
   -e ENABLE_MODULES=text2vec-openai,text2vec-cohere,text2vec-huggingface,ref2vec-centroid,generative-openai,qna-openai ^
-  semitechnologies/weaviate:1.22.4
+  semitechnologies/weaviate:1.24.1
 
 curl http://localhost:8080/v1/meta
 ```

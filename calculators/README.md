@@ -29,7 +29,7 @@ All recommendations are evidence-based with dynamic citations from a knowledge b
 - **Python 3.8+**: Core runtime environment
 - **Project Structure**: Must run from project root directory for proper imports
 - **System Path**: Project root automatically added to `sys.path` by calculator modules
-- **Cross-Platform**: Code uses `pathlib.Path` for cross-platform file path handling
+- **Cross-Platform**: Validated on Linux and Windows. macOS not yet validated. Code uses `pathlib.Path` for portable file paths
 
 ### Required Dependencies
 

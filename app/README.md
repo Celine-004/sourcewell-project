@@ -1,183 +1,55 @@
-# SourceWell Project - App Module
+# SourceWell App Module
+
+Streamlit web interface with user authentication, session persistence, multi-page health assessment workflow, and AI coaching chat.
 
 ## Overview
 
-The `app` module is the main web interface for the SourceWell Healthcare Platform, built with Streamlit to provide an interactive healthcare risk assessment application. This module serves as the primary user interface for collecting patient data, running evidence-based risk calculations, and presenting results with AI-powered insights.
+The app module provides the primary user interface for SourceWell. It handles user registration and login, persistent sessions backed by SQLite, patient data collection with saved-session pre-filling, risk calculator execution and visualization, AI-generated explanations with citation verification, and an AI coaching chat for follow-up health questions.
 
 ## Architecture
 
-### Main Components
-
 ```
-app/
-├── main.py                     # Application entry point
-├── __init__.py                 # Package initialization
-├── ui/
-│   ├── __init__.py            # UI package initialization
-│   ├── main_interface.py       # Main interface orchestration
-│   ├── styles/
-│   │   └── custom.css         # Custom styling
-│   ├── pages/                 # Individual page modules
-│   │   ├── __init__.py        # Pages package initialization
-│   │   ├── assessment.py      # Risk calculator execution
-│   │   ├── coaching.py        # Health guidance
-│   │   ├── history.py         # Patient data collection
-│   │   └── report.py          # Explanations and recommendations
-│   └── components/            # Reusable UI components
-│       ├── citation_viewer.py # Medical citation display
-│       ├── patient_forms.py   # Patient data collection forms
-│       ├── results_display.py # Results presentation
-│       └── risk_dashboard.py  # Risk assessment visualization
+app/ 
+├── main.py             # Entry point: login, session picker, app launch 
+├── data/ 
+│ ├── database.py       # SQLite user/session/chat persistence 
+│ └── init.py 
+└── ui/ 
+├── main_interface.py   # Page navigation and session state orchestration 
+├── styles/ 
+│ └── custom.css        # Custom Streamlit styling ├── pages/ 
+│ ├── history.py        # Patient data collection (3-tier forms) 
+│ ├── assessment.py     # Risk calculator execution 
+│ ├── report.py         # AI explanations with citations and verification 
+│ └── coaching.py       # Health recommendations + AI chat 
+└── components/ 
+├── patient_forms.py    # Form widgets with session pre-fill (_get_saved) 
+├── risk_dashboard.py   # Plotly risk visualization (bar, gauge, cards) 
+├── results_display.py  # Risk results presentation 
+└── citation_viewer.py  # Medical citation display
 ```
 
-### Core Classes
 
-#### SourceWellInterface
+## User Flow
 
-The main orchestration class that manages:
+The application presents a login or registration screen on first visit. Returning users can select a previous session to restore patient data, risk results, and chat history, or start a new session. The workflow then proceeds through four pages: Patient History (data collection across basic info, clinical measurements, and medical/family history), Assessment (FINDRISC, Framingham, and Colorectal risk calculators with visual results), Report (AI-generated explanations with optional citation verification and detailed analysis), and Coaching (static health recommendations with an AI chat for personalized follow-up questions).
 
-- Session state for patient data, risk results, and AI explanations
-- Navigation between application pages
-- Component initialization and coordination
-- Custom CSS styling integration
+## Session Persistence
 
-#### RiskDashboard
+The `app/data/database.py` module manages a SQLite database stored at `.db/sourcewell.db` (excluded from git). It tracks user accounts, sessions with timestamps, patient data snapshots, and chat history. When a user loads a previous session, form fields are pre-filled via the `_get_saved` helper in `patient_forms.py`, with key remapping to handle differences between calculator output keys and form field names.
 
-Comprehensive risk assessment system featuring:
-
-- Integration with MultiCalculatorRunner for risk calculations
-- Visual risk summaries with interactive cards and metrics
-- Plotly-based charts (bar charts, gauge charts)
-- Risk factors analysis with priority actions
-- Error handling for calculator failures
-
-## Features
-
-### Multi-Page Navigation
-
-- **Patient History**: Patient data collection and management
-- **Assessment**: Risk calculator execution (FINDRISC diabetes, Framingham cardiovascular, colorectal screening)
-- **Report**: AI-powered explanations and recommendations
-- **Coaching**: Personalized health guidance
-
-### Risk Assessment Capabilities
-
-- **FINDRISC Calculator**: 10-year Type 2 Diabetes risk assessment
-- **Framingham Calculator**: Cardiovascular disease risk calculation
-- **Colorectal Screening**: Cancer screening recommendations
-- **Visual Analytics**: Interactive charts and progress indicators
-- **Risk Stratification**: Color-coded risk levels and priority actions
-
-### User Interface Features
-
-- Responsive design with custom CSS styling
-- Progress indicators for multi-step workflows
-- Session state persistence
-- Error handling and user feedback
-- Debug information toggle for development
-
-## Technical Implementation
-
-### Framework & Libraries
-
-- **Streamlit**: Web application framework
-- **Plotly**: Interactive data visualization (charts, gauges)
-- **Python Path Management**: Dynamic module imports
-
-### Configuration Management
-
-- Uses `sourcewell_config.json` for environment configuration
-- Sets cache paths for Hugging Face, temporary files, and pip cache
-- Environment variable management
-
-### Data Flow
-
-1. Patient data collection through PatientDataCollector
-2. Risk calculation via MultiCalculatorRunner integration
-3. Results visualization through RiskDashboard
-4. AI-powered insights and recommendations
-
-### Session Management
-
-The application maintains persistent session state for:
-
-- `patient_data`: Collected patient information
-- `risk_results`: Calculator outputs and assessments
-- `ai_explanations`: Generated insights and recommendations
-- `form_data`: Form input persistence
-- `ai_engine`: AI processing engine state
-
-## Module Dependencies
-
-### Internal Dependencies
-
-- `/calculators`: Risk assessment calculations (MultiCalculatorRunner)
-- `/knowledge_base`: Medical search engine integration
-- `/data_models`: Patient data structures (PatientData)
-
-### External Dependencies
-
-- `streamlit`: Web application framework
-- `plotly`: Data visualization library (plotly.graph_objects, plotly.express)
-- `pathlib`: File path management
-- `json`: Configuration file parsing
-- `os`: Environment variable management
-- `sys`: Python path manipulation
-
-## Usage
-
-### Running the Application
+## Running the Application
 
 ```bash
-# From project root
+# Ensure Weaviate is running
+docker compose up -d
+
+# Launch
 streamlit run app/main.py
 ```
 
-### Configuration
+The application is accessible at http://localhost:8501.
 
-The application reads configuration from `sourcewell_config.json` in the project root for:
+## Dependencies
 
-- Cache directory paths
-- Environment variable setup
-- System configuration
-
-### Page Flow
-
-1. **Patient History**: Collect and validate patient data
-2. **Assessment**: Select and run risk calculators
-3. **Report**: View AI-generated explanations and recommendations
-4. **Coaching**: Access personalized health guidance
-
-## Risk Visualization Features
-
-### Risk Visualization
-
-- **Risk Cards**: Individual calculator results with color coding
-- **Comparison Charts**: Side-by-side risk assessment visualization
-- **Gauge Charts**: Risk level indicators with thresholds
-- **Progress Bars**: Score visualization for assessment tools
-
-### Risk Analysis
-
-- **Priority Actions**: Critical recommendations highlighted
-- **Risk Factors**: Identified risk factors from assessments
-- **Risk Categorization**: Risk level categorization and color coding
-- **Success Indicators**: Low-risk confirmations
-
-## Error Handling
-
-The application includes comprehensive error handling for:
-
-- Missing patient data validation
-- Calculator execution failures
-- Session state management issues
-- File loading and configuration errors
-
-## Development Features
-
-- Debug information toggle for development
-- Session state inspection
-- Component state monitoring
-- Configuration validation
-
-This module serves as the primary interface for users to access evidence-based risk assessments through an intuitive, interactive web application.
+The app module depends on the calculators, knowledge_base, data_models, and llm modules internally. External dependencies include Streamlit, Plotly, and the standard library. The SQLite database requires no additional installation.
