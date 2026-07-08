@@ -24,7 +24,7 @@ llm/
   └── prompt_templates.py  # Condition-specific prompt construction
 ```
 
-Data Flow: Patient Data → Prompt Construction → RAG Evidence Retrieval → Qwen3 Generation → Citation Verification → Output
+Data Flow: Patient Data → RAG Evidence Retrieval → Prompt Construction (with sources) → Qwen3 Generation → Citation Verification → Output
 
 ## Hardware Requirements
 
