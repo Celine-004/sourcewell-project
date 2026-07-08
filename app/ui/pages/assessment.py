@@ -32,7 +32,7 @@ def render(interface):
     # Risk assessment section
     st.subheader("🧮 Risk Calculators")
     
-    # Calculator selection (for demo - normally would run all)
+    # Calculator selection
     st.markdown("**Available Risk Assessments:**")
     
     col1, col2, col3 = st.columns(3)
@@ -49,20 +49,32 @@ def render(interface):
         run_colorectal = st.checkbox("🎗️ Colorectal Screening", value=True)
         st.caption("Cancer screening recommendations")
     
+    selected_calculators = []
+    if run_findrisc:
+        selected_calculators.append('diabetes')
+    if run_framingham:
+        selected_calculators.append('cardiovascular')
+    if run_colorectal:
+        selected_calculators.append('colorectal_screening')
+    
     st.markdown("---")
     
     # Run assessment button
     col1, col2, col3 = st.columns([1, 1, 1])
     
     with col2:
-        if st.button("🚀 Run Risk Assessment", type="primary", use_container_width=True):
+        if not selected_calculators:
+            st.warning("Please select at least one calculator.")
+        elif st.button("🚀 Run Risk Assessment", type="primary", use_container_width=True):
             with st.spinner("Running risk calculations..."):
-                # Run risk assessment
-                results = interface.risk_dashboard.run_risk_assessment(patient_data)
+                # Run risk assessment with selected calculators
+                results = interface.risk_dashboard.run_risk_assessment(
+                    patient_data, selected_calculators=selected_calculators
+                )
                 
                 if results:
                     st.session_state.risk_results = results
-                                        # Save to database
+                    # Save to database
                     if 'db' in st.session_state and 'session_id' in st.session_state:
                         try:
                             st.session_state.db.save_risk_results(
@@ -88,10 +100,11 @@ def render(interface):
         # Navigation hint
         st.info("Navigate to 'Report' to get AI explanations and recommendations")
     
-    # Debug information (can be removed in production)
+    # Debug information
     if st.checkbox("🐛 Show Debug Info"):
         st.json({
             "patient_data_available": bool(st.session_state.get('patient_data')),
             "risk_results_available": bool(st.session_state.get('risk_results')),
+            "selected_calculators": selected_calculators,
             "session_keys": list(st.session_state.keys())
         })
