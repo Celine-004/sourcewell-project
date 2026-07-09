@@ -6,23 +6,214 @@ All modules import version data from here to maintain consistency.
 Semantic Versioning.
 """
 # application versioning
-__version__ = "0.4.0"
+__version__ = "1.0.3"
 
-#package metadata
+# package metadata
 __author__ = "Selin Birinci"
 __description__ = "SourceWell - Evidence-based preventive health guidance platform"
-__status__ = "Beta - Full Stack Operational with AI and Web Interface"
+__status__ = "Release - Full Platform Operational"
 __license__ = "MIT"
 
 # component versioning
-SCHEMA_VERSION = "1.1"           
-CONTENT_VERSION = "2025-09-16"   
-API_VERSION = "0.4"              
+SCHEMA_VERSION = "1.1"
+CONTENT_VERSION = "2025-09-16"
+API_VERSION = "1.0"
 
 # Version history
 VERSION_HISTORY = {
+    "1.0.3": {
+        "release_date": "2026-07-09",
+        "status": "Release - Full Platform Operational",
+        "description": "Align UI with data model: clinical fields are truly optional with None defaults",
+        "schema_version": "1.1",
+        "content_version": "2025-09-16",
+        "api_version": "1.0",
+        "api_changes": [],
+        "breaking_changes": "None",
+        "fixes": [
+            "Clinical measurements (BP, cholesterol, waist) now render as empty fields instead of placeholder values",
+            "UI aligned with PatientData model where clinical fields are Optional[int] = None",
+            "Calculators gracefully report which fields are missing rather than crashing",
+            "Help text indicates which calculator requires each field"
+        ],
+        "notes": "Colorectal screening runs independently of clinical measurements. FINDRISC and Framingham display clear messages when required fields are absent."
+    },
+
+    "1.0.2": {
+        "release_date": "2026-07-08",
+        "status": "Release - Full Platform Operational",
+        "description": "Wire calculator selection checkboxes and align Framingham display to AHA/ACC 2018 guidelines",
+        "schema_version": "1.1",
+        "content_version": "2025-09-16",
+        "api_version": "1.0",
+        "api_changes": [
+            "RiskDashboard.run_risk_assessment() now accepts selected_calculators parameter"
+        ],
+        "breaking_changes": "None",
+        "fixes": [
+            "Assessment page calculator checkboxes now control which calculators execute",
+            "Framingham risk display uses four-tier AHA/ACC 2018 classification (low/borderline/intermediate/high)",
+            "Gauge chart thresholds aligned to clinical cutoffs (5%, 7.5%, 20%)",
+            "Risk factor summary uses intermediate threshold at 7.5% instead of 10%",
+            "Comparison chart title clarified to 'Estimated 10-Year Risk: Diabetes vs. Cardiovascular'"
+        ],
+        "notes": "Previously, calculator selection checkboxes were cosmetic and all three calculators always ran."
+    },
+
+    "1.0.1": {
+        "release_date": "2026-07-08",
+        "status": "Release - Full Platform Operational",
+        "description": "Correct data flow documentation in LLM README",
+        "schema_version": "1.1",
+        "content_version": "2025-09-16",
+        "api_version": "1.0",
+        "api_changes": [],
+        "breaking_changes": "None",
+        "fixes": [
+            "LLM README data flow corrected: RAG evidence retrieval precedes prompt construction, not the reverse"
+        ],
+        "notes": "Documentation-only change."
+    },
+
+    "1.0.0": {
+        "release_date": "2026-07-07",
+        "status": "Release - Full Platform Operational",
+        "description": "First stable release. Complete platform with Qwen3-4B AI engine, user management, coaching chat, session persistence, and full documentation. Validated on Linux.",
+        "schema_version": "1.1",
+        "content_version": "2025-09-16",
+        "api_version": "1.0",
+        "api_changes": [
+            "All READMEs updated to reflect current architecture",
+            "Root README documents platform compatibility (Linux validated, Windows via WSL2, macOS not validated)",
+            "LLM README documents Qwen3 engine, SDPA attention, prompt templates",
+            "App README documents login/register, session persistence, coaching chat"
+        ],
+        "breaking_changes": "None",
+        "new_features": [],
+        "notes": "Documentation milestone marking the first complete, stable, and fully documented release of the SourceWell platform."
+    },
+
+    "0.7.0": {
+        "release_date": "2026-07-02",
+        "status": "Beta - User Management Added",
+        "description": "Add user authentication, session persistence, and cross-session data restoration",
+        "schema_version": "1.1",
+        "content_version": "2025-09-16",
+        "api_version": "0.7",
+        "api_changes": [
+            "Added app/data/database.py with UserDatabase class",
+            "Added login/register flow in app/main.py",
+            "Added session picker for restoring previous sessions"
+        ],
+        "breaking_changes": "app/main.py restructured with authentication gate before application launch",
+        "new_features": [
+            "SQLite-based user registration and login with SHA-256 password hashing",
+            "Session persistence: patient data, risk results, and chat history stored per session",
+            "Session picker allows users to resume previous sessions or start new ones",
+            "Form fields pre-fill from saved session data via _get_saved helper",
+            "Key remapping between calculator output keys and form field names on session restore",
+            "Action plan download bug fixed (non-dict risk result handling)"
+        ],
+        "notes": "Database stored at .db/sourcewell.db, excluded from git. All SQL uses parameterized queries."
+    },
+
+    "0.6.0": {
+        "release_date": "2026-06-30",
+        "status": "Beta - Coaching Chat Added",
+        "description": "Add AI coaching chat with context-aware responses and fix Chinese character leaks",
+        "schema_version": "1.1",
+        "content_version": "2025-09-16",
+        "api_version": "0.6",
+        "api_changes": [
+            "Added generate_coaching_response() to Qwen3Engine",
+            "Added chat UI to coaching page with session state history"
+        ],
+        "breaking_changes": "None",
+        "new_features": [
+            "AI coaching chat at bottom of coaching page with clinical advisor tone",
+            "Context-aware responses using patient risk results and conversation history",
+            "Non-ASCII character filtering via regex in qwen3_wrapper.py and qwen3_engine.py",
+            "setup_sourcewell.py updated: DEFAULT_AI_MODEL_ID changed from Phi-3 to Qwen/Qwen3-4B",
+            "Warning suppression for weaviate-client deprecation, bitsandbytes save_pretrained, and torch_dtype"
+        ],
+        "notes": "Coaching chat maintains last 6 messages for conversational context. Chinese character leaks from Qwen3 tokenizer resolved with post-generation regex filter."
+    },
+
+    "0.5.0": {
+        "release_date": "2026-06-30",
+        "status": "Beta - Qwen3 Migration",
+        "description": "Migrate AI engine from Phi-3 Mini to Qwen3-4B with 4-bit quantization, condition-specific prompts, and dynamic source configuration",
+        "schema_version": "1.1",
+        "content_version": "2025-09-16",
+        "api_version": "0.5",
+        "api_changes": [
+            "Added llm/qwen3_engine.py as primary engine replacing phi3_engine.py",
+            "Added llm/engines/qwen3_wrapper.py for model loading and generation",
+            "Refactored llm/utils/prompt_templates.py with build_system_prompt and build_report_prompt",
+            "Updated app/ui/pages/report.py to import Qwen3Engine"
+        ],
+        "breaking_changes": "Phi-3 engine archived. Qwen3Engine is now the active LLM engine. Report page imports changed.",
+        "new_features": [
+            "Qwen3-4B inference with 4-bit NF4 double quantization via bitsandbytes (~2.6GB VRAM)",
+            "SDPA attention optimization for NVIDIA Pascal+ GPUs with eager fallback",
+            "Condition-specific prompt templates: diabetes, cardiovascular, colorectal, general",
+            "Prompts restrict model to discussing only the selected condition",
+            "Dynamic source configuration: adjustable source count and character limits per explanation type",
+            "Detailed analysis mode for extended 4-6 paragraph explanations",
+            "Confidence metric based on evidence coverage ratio instead of hardcoded 0.85",
+            "Verification score and confidence displayed as separate metrics in UI",
+            "Citation verifier double-verification bug fixed",
+            "Quick summary uses generate_with_system_prompt to prevent Chinese character output"
+        ],
+        "notes": "Qwen3-4B selected over Qwen3-8B due to GTX 1060 VRAM constraints (2.6GB vs 5GB+). Phi-3 files retained for reference. Main branch merged into feature branch to incorporate Linux GPU fixes before migration."
+    },
+
+    "0.4.2": {
+        "release_date": "2026-06-24",
+        "status": "Beta - Linux GPU Fixes",
+        "description": "Resolve Linux GPU inference failures and refactor prompt templates",
+        "schema_version": "1.1",
+        "content_version": "2025-09-16",
+        "api_version": "0.4",
+        "api_changes": [
+            "Refactored prompt_templates.py: separated build_system_prompt and build_report_prompt",
+            "Fixed citation_verifier.py import path"
+        ],
+        "breaking_changes": "prompt_templates.py API changed: build_explanation_prompt replaced with build_system_prompt and build_report_prompt",
+        "fixes": [
+            "Resolved GPU inference fallback failure on Linux (Ubuntu 22.04, GTX 1060, CUDA 12.1)",
+            "Fixed citation verifier import path mismatch",
+            "Restructured prompt templates with separated system and report prompt construction"
+        ],
+        "notes": "Root cause was cascading compatibility issue between transformers 4.43.0, accelerate 1.10.1, and bitsandbytes on Linux with Python 3.12 and PyTorch 2.3.1."
+    },
+
+    "0.4.1": {
+        "release_date": "2025-10-30",
+        "status": "Beta - Maintenance",
+        "description": "Dependency updates, setup improvements, system tests, and documentation",
+        "schema_version": "1.1",
+        "content_version": "2025-09-16",
+        "api_version": "0.4",
+        "api_changes": [],
+        "breaking_changes": "None",
+        "improvements": [
+            "Updated dependency versions in requirements.txt",
+            "Added AI model pre-download capability to setup script with local cache management",
+            "Added full system test suite (test_full_system.py)",
+            "Added centralized config file (sourcewell_config.json)",
+            "Added Streamlit UI application module",
+            "Added prompt template utilities for LLM module",
+            "Added RAG retrieval engine for knowledge base integration",
+            "Added Phi-3 model wrapper with GPU detection and quantization",
+            "Added LLM module with engine orchestration",
+            "Updated all module READMEs"
+        ],
+        "notes": "Incremental improvements building on 0.4.0 foundation. All components added as part of the initial full-stack integration."
+    },
+
     "0.4.0": {
-        "release_date": "2025-10-6",
+        "release_date": "2025-10-06",
         "status": "Beta - Full Stack Operational with AI and Web Interface",
         "description": "Extends evidence-based calculator suite with AI-powered medical explanations via Phi-3 Mini and comprehensive Streamlit web interface, plus enhanced installation and deployment capabilities",
         "schema_version": "1.1",
@@ -45,59 +236,8 @@ VERSION_HISTORY = {
             "Optional AI model predownloading for offline operation capability",
             "Comprehensive error handling and graceful degradation for AI components"
         ],
-        "calculator_integration": [
-            "Extended existing FINDRISC, Framingham, and Colorectal calculators with AI explanation generation",
-            "Integrated MultiCalculatorRunner with web interface and visualization pipeline",
-            "PatientData model integration with Streamlit form components"
-        ],
-        "technical_achievements": [
-            "Full-stack integration: Streamlit UI ↔ Risk Calculators ↔ LLM Engine ↔ Knowledge Base",
-            "Robust LLM engine with multiple initialization strategies and graceful degradation",
-            "Cross-platform PyTorch 2.3.1 installation with GPU acceleration support and CPU fallback",
-            "Memory optimization support via bitsandbytes 0.41.1 (with Windows compatibility fallbacks)",
-            "Comprehensive error handling and health monitoring across all components",
-            "RAG integration with knowledge base retrieval and citation verification pipeline"
-        ],
-        "infrastructure_improvements": [
-            "Cross-platform installation script with multi-vendor GPU detection and robust timeout handling",
-            "Project-local cache management: all HuggingFace models, pip cache, and temporary files stored in project/.cache directory",
-            "Environment variable configuration directs all caches to project folder (HF_HOME, PIP_CACHE_DIR, TMP/TEMP, TORCH_HOME)",
-            "Standardized on PyTorch 2.3.1",
-            "Requirements updated for AI/UI stack: transformers, sentence-transformers, streamlit, plotly",
-            "Added accelerate 1.10.1 for Hugging Face model optimization",
-            "Installation verification with component health checks and fallback validation",
-            "Robust timeout handling for large model downloads (up to 30 minutes)",
-            "Cache path persistence in configuration file for cross-process consistency"
-        ],
-        "ai_capabilities": [
-            "Microsoft Phi-3 Mini 4K model integration for contextual medical explanations",
-            "RAG integration with knowledge base retrieval and citation verification",
-            "Intelligent fallback to text-based summaries when AI components fail",
-            "Hardware-optimized inference with GPU acceleration and 4-bit quantization",
-            "Structured response format with confidence scores(will be dinamic in the next update) and verification metadata"
-        ],
-        "medical_compliance": [
-            "AI-generated explanations include medical disclaimers and professional consultation guidance",
-            "Citation verification pipeline maintains evidence-based recommendations when knowledge base available",
-            "Fallback mechanisms ensure system availability when AI components unavailable",
-            "Structured error handling prevents incomplete medical information delivery",
-            "All therapy recommendations include 'Consult your medical provider' disclaimers"
-        ],
-        "system_requirements": [
-            "Disk space: ~8GB for AI models (stored in project/.cache directory)",
-            "RAM: 8GB minimum, 16GB recommended for GPU acceleration",
-            "Network: Stable connection required for initial model download (~7-8GB)",
-            "PyTorch 2.3.1 with CUDA 12.1/11.8 support or CPU fallback"
-        ],
-        "development_status": [
-            "Core functionality implemented and locally tested on primary development platform(Windows)",
-            "Cross-platform installation support implemented with hardware detection",
-            "AI model performance varies by hardware (5-180 seconds per explanation)",
-            "Medical content accuracy requires professional validation before clinical deployment"
-        ],
-        "notes": "Major expansion: Adds AI explanation engine and comprehensive web interface to existing calculator foundation from 0.3.0. Provides complete healthcare AI platform with evidence-based risk assessment, intuitive user interface, and AI-powered insights while maintaining medical safety standards. PyTorch 2.3.1 standardization ensures broad compatibility. Project-local storage keeps all downloads contained within project directory for predictable file management. Technical capabilities documented; comprehensive cross-platform testing and medical validation recommended before production deployment."
+        "notes": "Major expansion: Adds AI explanation engine and comprehensive web interface to existing calculator foundation. Development platform: Windows."
     },
-
 
     "0.3.0": {
         "release_date": "2025-09-25",
@@ -109,10 +249,10 @@ VERSION_HISTORY = {
         "api_changes": [
             "Added complete risk calculator API with MultiCalculatorRunner orchestration",
             "Added PatientData model with WHO BMI calculation and robust input filtering",
-            "Enhanced test framework with calculator-specific validation and CI/CD integration",
+            "Enhanced test framework with calculator-specific validation"
         ],
         "breaking_changes": "None - new functionality only",
-        "features": [
+        "new_features": [
             "FINDRISC diabetes risk calculator with personalized evidence-based recommendations",
             "Modified Framingham 10-year CVD risk with AHA/ACC 2017/2019 guideline compliance",
             "USPSTF 2021 colorectal screening recommendations with risk stratification",
@@ -122,56 +262,31 @@ VERSION_HISTORY = {
             "Clinical safety disclaimers for medication and therapy recommendations",
             "Comprehensive calculator test suite with clinical accuracy validation"
         ],
-        "technical_achievements": [
-            "100% calculator test success rate with 11 comprehensive test cases",
-            "Clinical accuracy validation for all three risk assessment domains",
-            "Knowledge base integration testing with fallback behavior validation",
-            "Medical compliance verification including therapy disclaimers",
-            "Realistic performance expectations for KB-integrated assessments"
-        ],
-        "medical_compliance": [
-            "All therapy recommendations include 'Consult your medical provider' disclaimers",
-            "Vancouver-style citation verification for all medical recommendations",
-            "Evidence-based fallbacks ensure clinical guidance always available",
-            "Clinical validation ranges based on WHO, AHA/ACC, ADA, USPSTF guidelines"
-        ],
-        "notes": "Major functional milestone - SourceWell now provides genuine clinical utility for preventive healthcare risk assessment"
+        "notes": "Major functional milestone - SourceWell now provides genuine clinical utility for preventive healthcare risk assessment."
     },
 
     "0.2.0": {
-    "release_date": "2025-09-24",
-    "status": "Development - Production Infrastructure Ready", 
-    "description": "Production-ready infrastructure with centralized configuration, universal installer, and enhanced deployment capabilities",
-    "schema_version": "1.1",
-    "content_version": "2025-09-16",
-    "api_version": "0.2",
-    "api_changes": "Added centralized configuration module (knowledge_base.config) with environment-aware port management; enhanced test framework with CLI execution",
-    "breaking_changes": "Weaviate port configuration moved from hardcoded values to centralized config module",
-    "features": [
-        "Universal PyTorch installer with cross-platform GPU detection (NVIDIA, AMD, Intel, Apple Silicon)",
-        "Centralized configuration management with environment variable support",
-        "Production-ready knowledge base interface with health monitoring capabilities", 
-        "Intelligent test suite with dynamic content allocation and CI/CD integration",
-        "Enhanced schema with complete medical metadata and GPU-optimized vector indexing",
-        "CLI test execution via 'python -m tests' with professional exit codes"
-    ],
-    "infrastructure_improvements": [
-        "Adaptive storage management for space-constrained development environments",
-        "Robust PyTorch installation with 30-minute timeouts and automatic CPU fallback", 
-        "HuggingFace cache modernization (TRANSFORMERS_CACHE -> HF_HOME)",
-        "Environment variable propagation for subprocess operations(TMP/TEMP/PIP_CACHE_DIR)",
-        "Healthcare-grade error handling with comprehensive audit logging",
-        "Cross-platform configuration management for deployment flexibility"
-    ],
-    "pending_components": [
-        "Risk calculator implementations (FINDRISC, ModifiedFramingham, ColorectalScreening)",
-        "AI explanation generation with Phi-3 Mini", 
-        "Streamlit web interface",
-        "FastAPI REST endpoints"
-    ],
-    "medical_content": "Curated ADA, ACC/AHA, and USPSTF guidelines with research abstracts",
-    "notes": "Core dependencies streamlined (torch removed from requirements.txt); infrastructure hardened for production deployment scenarios"
-},
+        "release_date": "2025-09-24",
+        "status": "Development - Production Infrastructure Ready",
+        "description": "Production-ready infrastructure with centralized configuration, universal installer, and enhanced deployment capabilities",
+        "schema_version": "1.1",
+        "content_version": "2025-09-16",
+        "api_version": "0.2",
+        "api_changes": [
+            "Added centralized configuration module with environment-aware port management",
+            "Enhanced test framework with CLI execution"
+        ],
+        "breaking_changes": "Weaviate port configuration moved from hardcoded values to centralized config module",
+        "new_features": [
+            "Universal PyTorch installer with cross-platform GPU detection (NVIDIA, AMD, Intel, Apple Silicon)",
+            "Centralized configuration management with environment variable support",
+            "Production-ready knowledge base interface with health monitoring capabilities",
+            "Intelligent test suite with dynamic content allocation",
+            "CLI test execution via 'python -m tests' with professional exit codes"
+        ],
+        "notes": "Infrastructure hardened for production deployment scenarios."
+    },
+
     "0.1.0": {
         "release_date": "2025-09-20",
         "status": "Development - Knowledge Base Operational",
@@ -179,25 +294,21 @@ VERSION_HISTORY = {
         "schema_version": "1.0",
         "content_version": "2025-09-16",
         "api_version": "0.1",
-        "api_changes": "Initial public API established: MedicalSchemaManager, MedicalContentIngester, MedicalSearchEngine classes with documented method signatures",
+        "api_changes": [
+            "Initial public API: MedicalSchemaManager, MedicalContentIngester, MedicalSearchEngine"
+        ],
         "breaking_changes": None,
-        "features": [
+        "new_features": [
             "Weaviate v4 semantic search with NamedVectors integration",
             "Dual-layer SHA256 deduplication system for data integrity",
             "Medical content ingestion with Vancouver-style citations",
             "Calculator-specific filtering (FINDRISC, ModifiedFramingham, ColorectalScreening)",
-            "Comprehensive testing framework with infrastructure validation",
+            "Comprehensive testing framework with infrastructure validation"
         ],
-                "pending_components": [
-            "Risk calculator implementations (FINDRISC, ModifiedFramingham, ColorectalScreening)",
-            "AI explanation generation with Phi-3 Mini",
-            "Streamlit web interface",
-            "FastAPI REST endpoints"
-        ],
-        "medical_content": "Curated ADA, ACC/AHA, and USPSTF guidelines with research abstracts",
-        "notes": "Backend infrastructure complete and tested, ready for calculator implementation"
+        "notes": "Backend infrastructure complete and tested, ready for calculator implementation."
     }
 }
+
 
 def get_version_info():
     """Get comprehensive version information."""
