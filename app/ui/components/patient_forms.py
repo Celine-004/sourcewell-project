@@ -86,8 +86,9 @@ class PatientDataCollector:
 
 
     def collect_clinical_data(self) -> Dict[str, Any]:
-        """Collect Tier 2 clinical measurements"""
+        """Collect Tier 2 clinical measurements (all optional)"""
         st.subheader("🩺 Clinical Measurements")
+        st.caption("These fields are optional. Leave blank if unknown — only relevant calculators will run.")
 
         col1, col2 = st.columns(2)
 
@@ -97,24 +98,27 @@ class PatientDataCollector:
                 "Systolic (mmHg)",
                 min_value=70,
                 max_value=250,
-                value=self._get_saved('systolic_bp', 120),
-                help="Top number in blood pressure reading"
+                value=self._get_saved('systolic_bp', None),
+                placeholder="e.g. 120",
+                help="Top number in blood pressure reading. Required for cardiovascular risk."
             )
 
             diastolic_bp = st.number_input(
                 "Diastolic (mmHg)",
                 min_value=40,
                 max_value=150,
-                value=self._get_saved('diastolic_bp', 80),
-                help="Bottom number in blood pressure reading"
+                value=self._get_saved('diastolic_bp', None),
+                placeholder="e.g. 80",
+                help="Bottom number in blood pressure reading. Required for cardiovascular risk."
             )
 
             waist_circumference = st.number_input(
                 "Waist Circumference (cm)",
                 min_value=40,
                 max_value=200,
-                value=self._get_saved('waist_circumference', 85),
-                help="Measured at narrowest point"
+                value=self._get_saved('waist_circumference', None),
+                placeholder="e.g. 85",
+                help="Measured at narrowest point. Required for diabetes risk."
             )
 
         with col2:
@@ -123,16 +127,18 @@ class PatientDataCollector:
                 "Total Cholesterol (mg/dL)",
                 min_value=100,
                 max_value=500,
-                value=self._get_saved('total_cholesterol', 200),
-                help="From recent blood test"
+                value=self._get_saved('total_cholesterol', None),
+                placeholder="e.g. 200",
+                help="From recent blood test. Required for cardiovascular risk."
             )
 
             hdl_cholesterol = st.number_input(
                 "HDL Cholesterol (mg/dL)",
                 min_value=15,
                 max_value=100,
-                value=self._get_saved('hdl_cholesterol', 50),
-                help="'Good' cholesterol level"
+                value=self._get_saved('hdl_cholesterol', None),
+                placeholder="e.g. 50",
+                help="'Good' cholesterol level. Required for cardiovascular risk."
             )
 
         return {
@@ -142,6 +148,7 @@ class PatientDataCollector:
             "total_cholesterol": total_cholesterol,
             "hdl_cholesterol": hdl_cholesterol
         }
+
 
     
     def collect_medical_history(self) -> Dict[str, Any]:
@@ -186,7 +193,8 @@ class PatientDataCollector:
                     "Age at Family Member's Diagnosis",
                     min_value=20,
                     max_value=100,
-                    value=self._get_saved('family_colorectal_age', 60)
+                    value=self._get_saved('family_colorectal_age', None),
+                    placeholder="e.g. 60"
                 )
 
         return {
