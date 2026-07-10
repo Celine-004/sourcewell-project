@@ -301,7 +301,7 @@ def display_ai_explanations(explanations: Dict[str, Any], show_verification: boo
                     with col2:
                         if flagged_sentences:
                             st.warning(f"⚠️ {len(flagged_sentences)} claims need verification")
-                            for sentence in flagged_sentences[:3]:
+                            for sentence in flagged_sentences:
                                 st.caption(f"• {sentence}")
                         else:
                             st.success("✅ All claims verified")
