@@ -259,3 +259,9 @@ desktop.ini
 sourcewell_config.json
 .db/
 .data/
+
+# benchmark files
+benchmark_outputs/
+benchmark_results.json
+bench_phi3.json
+bench_qwen.json

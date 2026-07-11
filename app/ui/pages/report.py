@@ -284,8 +284,8 @@ def display_ai_explanations(explanations: Dict[str, Any], show_verification: boo
                         st.markdown("---")
 
             # Verification details
-            if show_verification and result.get('verification_details', {}).get('success'):
-                details = result['verification_details']
+            details = result.get('verification_details') or {}
+            if show_verification and details.get('success'):
 
                 with st.expander("🔍 Claim Verification Details"):
                     total_claims = details.get('total_claims', 0)

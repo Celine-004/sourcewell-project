@@ -160,7 +160,7 @@ class Phi3Wrapper:
             self.logger.info("Loading tokenizer...")
             self.tokenizer = AutoTokenizer.from_pretrained(
                 self.model_id,
-                trust_remote_code=True,
+                trust_remote_code=False,
                 padding_side="left",
                 cache_dir=self.cache_dir,
                 local_files_only=True
@@ -229,7 +229,7 @@ class Phi3Wrapper:
                 model = AutoModelForCausalLM.from_pretrained(
                     self.model_id,
                     quantization_config=bnb_config,
-                    trust_remote_code=True,
+                    trust_remote_code=False,
                     cache_dir=self.cache_dir,
                     local_files_only=True,
                     attn_implementation=attn_implementation
@@ -252,7 +252,7 @@ class Phi3Wrapper:
             model = AutoModelForCausalLM.from_pretrained(
                 self.model_id,
                 device_map={'': 0},  # Only use device_map without quantization
-                trust_remote_code=True,
+                trust_remote_code=False,
                 torch_dtype=torch.float16,
                 cache_dir=self.cache_dir,
                 local_files_only=True,
@@ -285,7 +285,7 @@ class Phi3Wrapper:
                 model = AutoModelForCausalLM.from_pretrained(
                     self.model_id,
                     device_map="auto",  # Let it figure out the best mapping
-                    trust_remote_code=True,
+                    trust_remote_code=False,
                     torch_dtype=torch.float16,
                     cache_dir=self.cache_dir,
                     local_files_only=True,
@@ -329,7 +329,7 @@ class Phi3Wrapper:
             model = AutoModelForCausalLM.from_pretrained(
                 self.model_id,
                 torch_dtype=torch.float16,
-                trust_remote_code=True,
+                trust_remote_code=False,
                 cache_dir=self.cache_dir,
                 local_files_only=True,
                 attn_implementation="eager"
@@ -347,7 +347,7 @@ class Phi3Wrapper:
             model = AutoModelForCausalLM.from_pretrained(
                 self.model_id,
                 torch_dtype=torch.float32,
-                trust_remote_code=True,
+                trust_remote_code=False,
                 cache_dir=self.cache_dir,
                 local_files_only=True,
                 attn_implementation="eager"
